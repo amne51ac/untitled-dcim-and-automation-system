@@ -1,0 +1,39 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~
+
+# Python (future)
+__pycache__/
+*.py[cod]
+.Python
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Node (future)
+node_modules/
+dist/
+.next/
+
+# Build / test
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets (never commit)
+*.pem
+*.key
+secrets/
+
+# Misc
+*.log
