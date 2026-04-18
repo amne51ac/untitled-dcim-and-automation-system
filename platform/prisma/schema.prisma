@@ -1,0 +1,509 @@
+// Network automation & DCIM — Phase 1 data model (clean-room derived)
+// UUID keys, soft-delete, tenant-scoped resources
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Tenancy & identity ---
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  projects Project[]
+  apiTokens ApiToken[]
+  locations Location[]
+  racks     Rack[]
+  devices   Device[]
+  vrfs      Vrf[]
+  prefixes  Prefix[]
+  ipAddresses IpAddress[]
+  vlans     Vlan[]
+  circuits  Circuit[]
+  providers Provider[]
+  jobs      JobDefinition[]
+  jobRuns   JobRun[]
+  webhooks  WebhookSubscription[]
+  auditEvents AuditEvent[]
+  observedStates ObservedResourceState[]
+  serviceInstances ServiceInstance[]
+  changeRequests ChangeRequest[]
+}
+
+model Project {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String  @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  slug           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+}
+
+enum ApiTokenRole {
+  READ
+  WRITE
+  ADMIN
+}
+
+model ApiToken {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  tokenHash      String   @unique
+  role           ApiTokenRole @default(WRITE)
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+  lastUsedAt     DateTime?
+
+  @@index([organizationId])
+}
+
+// --- DCIM ---
+
+model LocationType {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @unique
+  description String?
+  locations   Location[]
+}
+
+model Location {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  parentId       String?  @db.Uuid
+  parent         Location? @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children       Location[] @relation("LocationHierarchy")
+  locationTypeId String   @db.Uuid
+  locationType   LocationType @relation(fields: [locationTypeId], references: [id])
+  name           String
+  slug           String
+  description    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  racks Rack[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([parentId])
+}
+
+model Rack {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  locationId     String   @db.Uuid
+  location       Location @relation(fields: [locationId], references: [id])
+  name           String
+  uHeight        Int      @default(42)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  devices Device[]
+
+  @@unique([organizationId, locationId, name])
+  @@index([organizationId])
+}
+
+model Manufacturer {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String       @unique
+  deviceTypes DeviceType[]
+}
+
+model DeviceType {
+  id             String @id @default(uuid()) @db.Uuid
+  manufacturerId String @db.Uuid
+  manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id])
+  model          String
+  uHeight        Int    @default(1)
+  devices        Device[]
+
+  @@unique([manufacturerId, model])
+}
+
+model DeviceRole {
+  id      String   @id @default(uuid()) @db.Uuid
+  name    String   @unique
+  devices Device[]
+}
+
+enum DeviceStatus {
+  PLANNED
+  STAGED
+  ACTIVE
+  DECOMMISSIONED
+}
+
+model Device {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  rackId         String?  @db.Uuid
+  rack           Rack?    @relation(fields: [rackId], references: [id])
+  deviceTypeId   String   @db.Uuid
+  deviceType     DeviceType @relation(fields: [deviceTypeId], references: [id])
+  deviceRoleId   String   @db.Uuid
+  deviceRole     DeviceRole @relation(fields: [deviceRoleId], references: [id])
+  name           String
+  serialNumber   String?
+  positionU      Int?
+  face           String?  // front | rear
+  status         DeviceStatus @default(PLANNED)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  interfaces Interface[]
+  observed   ObservedResourceState?
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([rackId])
+}
+
+model Interface {
+  id        String   @id @default(uuid()) @db.Uuid
+  deviceId  String   @db.Uuid
+  device    Device   @relation(fields: [deviceId], references: [id])
+  name      String
+  type      String   // ethernet, loopback, etc.
+  macAddress String?
+  mtu       Int?
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  ipAddresses IpAddress[]
+  cableEndsA  Cable[] @relation("CableA")
+  cableEndsB  Cable[] @relation("CableB")
+
+  @@unique([deviceId, name])
+  @@index([deviceId])
+}
+
+model Cable {
+  id        String   @id @default(uuid()) @db.Uuid
+  interfaceAId String @db.Uuid
+  interfaceA   Interface @relation("CableA", fields: [interfaceAId], references: [id])
+  interfaceBId String @db.Uuid
+  interfaceB   Interface @relation("CableB", fields: [interfaceBId], references: [id])
+  label     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([interfaceAId])
+  @@index([interfaceBId])
+}
+
+// --- IPAM ---
+
+model Vrf {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  rd             String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  prefixes Prefix[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model Prefix {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  vrfId          String   @db.Uuid
+  vrf            Vrf      @relation(fields: [vrfId], references: [id])
+  cidr           String
+  description    String?
+  parentId       String?  @db.Uuid
+  parent         Prefix?  @relation("PrefixHierarchy", fields: [parentId], references: [id])
+  children       Prefix[] @relation("PrefixHierarchy")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  ipAddresses IpAddress[]
+
+  @@unique([organizationId, vrfId, cidr])
+  @@index([organizationId])
+}
+
+model IpAddress {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  prefixId       String   @db.Uuid
+  prefix         Prefix   @relation(fields: [prefixId], references: [id])
+  address        String
+  description    String?
+  interfaceId    String?  @db.Uuid
+  interface      Interface? @relation(fields: [interfaceId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([organizationId, address])
+  @@index([prefixId])
+}
+
+model VlanGroup {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String @unique
+  vlans Vlan[]
+}
+
+model Vlan {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  vlanGroupId    String?  @db.Uuid
+  vlanGroup      VlanGroup? @relation(fields: [vlanGroupId], references: [id])
+  vid            Int
+  name           String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([organizationId, vid])
+  @@index([organizationId])
+}
+
+// --- Circuits ---
+
+model Provider {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  asn            Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  circuits Circuit[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+enum CircuitStatus {
+  PLANNED
+  ACTIVE
+  DECOMMISSIONED
+}
+
+model Circuit {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  providerId     String   @db.Uuid
+  provider       Provider @relation(fields: [providerId], references: [id])
+  cid            String
+  bandwidthMbps  Int?
+  status         CircuitStatus @default(PLANNED)
+  aSideNotes     String?
+  zSideNotes     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@unique([organizationId, cid])
+  @@index([organizationId])
+}
+
+// --- AS1-style: service inventory + closed-loop observed state ---
+
+model ServiceInstance {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  serviceType    String
+  customerRef    String?
+  status         String   @default("active")
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  @@index([organizationId])
+}
+
+enum ObservationKind {
+  DEVICE
+  INTERFACE
+  SERVICE
+}
+
+// Reconciliation: last observed telemetry vs intent (drift flag)
+model ObservedResourceState {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  kind           ObservationKind
+  deviceId       String?  @unique @db.Uuid
+  device         Device?  @relation(fields: [deviceId], references: [id])
+  lastSeenAt     DateTime?
+  health         String?
+  payload        Json?
+  driftDetected  Boolean  @default(false)
+  driftSummary   String?
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([kind])
+}
+
+// --- Automation: jobs, approvals, change requests ---
+
+enum JobRunStatus {
+  PENDING
+  APPROVAL_REQUIRED
+  APPROVED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model JobDefinition {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  key            String
+  name           String
+  description    String?
+  requiresApproval Boolean @default(false)
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  runs JobRun[]
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+}
+
+model JobRun {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  jobDefinitionId String  @db.Uuid
+  jobDefinition  JobDefinition @relation(fields: [jobDefinitionId], references: [id])
+  status         JobRunStatus @default(PENDING)
+  idempotencyKey String?
+  input          Json?
+  output         Json?
+  logs           String?
+  correlationId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([jobDefinitionId])
+  @@index([idempotencyKey])
+}
+
+enum ChangeRequestStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  APPLIED
+}
+
+model ChangeRequest {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  description    String?
+  payload        Json
+  status         ChangeRequestStatus @default(DRAFT)
+  correlationId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+// --- Events & webhooks ---
+
+enum WebhookEvent {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model WebhookSubscription {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  url            String
+  secret         String?
+  resourceTypes  String[]
+  events         WebhookEvent[]
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model AuditEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  actor          String
+  action         String
+  resourceType   String
+  resourceId     String
+  correlationId  String?
+  before         Json?
+  after          Json?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([resourceType, resourceId])
+  @@index([correlationId])
+}
+
+// --- Plugin registry (metadata only in Phase 1) ---
+
+model PluginRegistration {
+  id          String   @id @default(uuid()) @db.Uuid
+  packageName String   @unique
+  version     String
+  enabled     Boolean  @default(true)
+  manifest    Json?
+  registeredAt DateTime @default(now())
+}

@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nims
+      POSTGRES_PASSWORD: nims_dev
+      POSTGRES_DB: nims
+    ports:
+      - "5433:5432"
+    volumes:
+      - nims_pg:/var/lib/postgresql/data
+
+volumes:
+  nims_pg:

@@ -282,11 +282,18 @@ cleanroom/          # Clean-room capability & design research (Source A–H, AS1
 docs/               # Architecture visuals, publishing notes
   architecture.md   # Extended Mermaid diagrams
   PUBLISHING.md     # Git / GitHub CLI steps
+platform/           # Phase 1 implementation (API, schema, minimal console)
+  api server: Node + Fastify + Prisma + PostgreSQL; GraphQL read at /graphql
+  web/console.html  # Optional static helper to call the API from a browser
 README.md           # This plan
 LICENSE             # Apache-2.0
 ```
 
-Application code, infrastructure templates, and ADRs will land in dedicated directories as implementation begins.
+### Run the platform API (local)
+
+From [`platform/`](platform/): copy `.env.example` to `.env`, start Postgres (`docker compose up -d`), then `npm install`, `npx prisma migrate dev`, `npm run db:seed`, `npm run dev`. Open `http://localhost:8080/docs` for OpenAPI and `/graphql` for GraphiQL. Use the seed-printed Bearer token on `/v1/me`.
+
+Infrastructure-as-code and ADRs can be added alongside this skeleton as the SDLC matures.
 
 ---
 

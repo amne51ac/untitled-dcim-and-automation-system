@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NIMS — operations console (dev)</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        background: #0f1419;
+        color: #e6edf3;
+      }
+      body {
+        max-width: 960px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      label {
+        display: block;
+        margin-top: 1rem;
+        font-size: 0.85rem;
+        color: #8b949e;
+      }
+      input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.5rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid #30363d;
+        background: #161b22;
+        color: inherit;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        border: none;
+        background: #238636;
+        color: #fff;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #2ea043;
+      }
+      pre {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        overflow: auto;
+        font-size: 0.8rem;
+      }
+      h1 {
+        font-weight: 600;
+        font-size: 1.25rem;
+      }
+      p.hint {
+        color: #8b949e;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Network inventory — quick API check</h1>
+    <p class="hint">
+      Paste a Bearer token from <code>npm run db:seed</code>, then load devices. Serve this file with any static server
+      (or open via file:// — CORS must allow your origin; use the API&rsquo;s host for API base URL).
+    </p>
+    <label for="base">API base URL</label>
+    <input id="base" value="http://127.0.0.1:8080" autocomplete="off" />
+    <label for="token">Bearer token</label>
+    <input id="token" type="password" placeholder="paste token" autocomplete="off" />
+    <button type="button" id="go">GET /v1/devices</button>
+    <pre id="out">{}</pre>
+    <script>
+      document.getElementById("go").onclick = async () => {
+        const base = document.getElementById("base").value.replace(/\/$/, "");
+        const token = document.getElementById("token").value.trim();
+        const out = document.getElementById("out");
+        if (!token) {
+          out.textContent = "Set a token first.";
+          return;
+        }
+        out.textContent = "Loading…";
+        try {
+          const res = await fetch(base + "/v1/devices", {
+            headers: { Authorization: "Bearer " + token },
+          });
+          const data = await res.json();
+          out.textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          out.textContent = String(e);
+        }
+      };
+    </script>
+  </body>
+</html>
