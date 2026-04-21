@@ -10,23 +10,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/docs-layout.css" />
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 </head>
-<body>
+<body class="docs-page" data-docs-page="architecture">
   <header class="site-header">
     <div class="site-header-inner">
       <a class="site-logo" href="index.html">
-        <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="240" height="48" />
+        <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="200" height="40" />
       </a>
       <nav class="site-nav" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="documentation.html">Documentation</a>
+        <a href="documentation.html">Docs</a>
         <a href="https://github.com/amne51ac/intentcenter">GitHub</a>
       </nav>
     </div>
   </header>
 
-  <main class="site-main">
+  <div class="docs-shell">
+    <aside id="docs-sidebar" class="docs-sidebar" aria-label="Section navigation"></aside>
+    <main class="docs-main docs-prose">
     <p class="crumb"><a href="documentation.html">Documentation</a> · Architecture</p>
     <h1>Architecture &amp; design visuals</h1>
     <p class="lead">
@@ -238,9 +241,10 @@ flowchart LR
     </p>
 
     <p style="margin-top: 32px">
-      <a href="documentation.html">← Back to documentation</a>
+      <a href="documentation.html">← Documentation home</a>
     </p>
-  </main>
+    </main>
+  </div>
 
   <footer class="site-footer">
     <p>
@@ -248,7 +252,7 @@ flowchart LR
       <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
     </p>
   </footer>
-
+  <script src="assets/docs-nav.js" defer></script>
   <script>
     mermaid.initialize({
       startOnLoad: true,

@@ -3,89 +3,115 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="IntentCenter documentation index — architecture, platform, roadmap, research, and design." />
+  <meta name="description" content="IntentCenter documentation index — API, data model, architecture, platform, roadmap, research, and design." />
   <title>Documentation — IntentCenter</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/docs-layout.css" />
 </head>
-<body>
+<body class="docs-page" data-docs-page="documentation">
   <header class="site-header">
     <div class="site-header-inner">
       <a class="site-logo" href="index.html">
-        <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="240" height="48" />
+        <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="200" height="40" />
       </a>
       <nav class="site-nav" aria-label="Primary">
         <a href="index.html">Home</a>
-        <a href="documentation.html" aria-current="page">Documentation</a>
-        <a href="brand.html">Brand</a>
+        <a href="documentation.html" aria-current="page">Docs</a>
         <a href="https://github.com/amne51ac/intentcenter">GitHub</a>
       </nav>
     </div>
   </header>
 
-  <main class="site-main">
-    <p class="crumb">Documentation</p>
-    <p class="console-tagline">Network intent &amp; inventory — operator console</p>
-    <h1>IntentCenter documentation</h1>
-    <p class="lead">
-      Guides and specifications for the planning repository and Phase&nbsp;1 platform. Markdown sources live in the
-      repo; these pages are a browsable hub for GitHub Pages.
-    </p>
+  <div class="docs-shell">
+    <aside id="docs-sidebar" class="docs-sidebar" aria-label="Section navigation"></aside>
+    <main class="docs-main docs-prose">
+      <p class="crumb">Documentation</p>
+      <p class="console-tagline">Network intent &amp; inventory — operator console</p>
+      <h1>IntentCenter documentation</h1>
+      <p class="lead">
+        Guides and specifications for the planning repository and Phase&nbsp;1 platform. Markdown sources live in the
+        repo; these pages mirror the same structure with a persistent section menu for GitHub Pages.
+      </p>
 
-    <div class="doc-hero-strip">
-      <img src="assets/screenshots/overview-dashboard.png" width="840" height="473" alt="" loading="lazy" />
-      <div class="doc-hero-copy">
-        <p class="section-label" style="margin-bottom: 8px">Console</p>
-        <p>
-          Documentation uses the same <strong>charcoal</strong> surfaces, <strong>Signal Amber</strong> accents, and
-          <strong>JetBrains Mono</strong> labels as the React operator console—so what you read here feels like what you run in production.
-        </p>
+      <nav class="docs-toc" aria-label="Primary topics">
+        <div class="docs-toc-title">Start here</div>
+        <ul>
+          <li><a href="getting-started.html">Getting started</a> — run Postgres, API, and console locally</li>
+          <li><a href="api.html">REST &amp; OpenAPI</a> — auth, versioned surfaces, UI touchpoints</li>
+          <li><a href="data-model.html">Data model</a> — Prisma object types and anchors</li>
+          <li><a href="architecture.html">Architecture</a> — context, containers, sequences (Mermaid)</li>
+        </ul>
+      </nav>
+
+      <div class="doc-hero-strip">
+        <img src="assets/screenshots/overview-dashboard.png" width="840" height="473" alt="" loading="lazy" />
+        <div class="doc-hero-copy">
+          <p class="section-label" style="margin-bottom: 8px">Console</p>
+          <p>
+            Documentation uses the same <strong>charcoal</strong> surfaces, <strong>Signal Amber</strong> accents, and
+            <strong>JetBrains Mono</strong> labels as the React operator console—so what you read here matches what you run in production.
+          </p>
+        </div>
       </div>
-    </div>
 
-    <div class="grid-2" style="margin-top: 8px">
-      <a class="doc-card" href="getting-started.html">
-        <h3>Getting started</h3>
-        <p>Clone the repo, configure the API, run Postgres, Prisma migrations, seed data, and open the console.</p>
-      </a>
-      <a class="doc-card" href="architecture.html">
-        <h3>Architecture</h3>
-        <p>System context, logical containers, control vs data plane, deployment patterns, sequences, and plugin boundary (Mermaid diagrams).</p>
-      </a>
-      <a class="doc-card" href="roadmap.html">
-        <h3>Vision &amp; roadmap</h3>
-        <p>Product vision, clean-room traceability, phased roadmap, and non-functional targets.</p>
-      </a>
-      <a class="doc-card" href="platform.html">
-        <h3>Platform &amp; API</h3>
-        <p>Stack summary, REST touchpoints for the UI, bulk import/export, and object graph endpoints.</p>
-      </a>
-      <a class="doc-card" href="llm-assistant.html">
-        <h3>LLM-assisted operations</h3>
-        <p>Design for grounded Q&amp;A, proposal-first changes, bulk mapping, security, and phased rollout.</p>
-      </a>
-      <a class="doc-card" href="cleanroom.html">
-        <h3>Clean-room research</h3>
-        <p>How reference materials map to delivery—and links to the full <code>cleanroom/</code> tree on GitHub.</p>
-      </a>
-      <a class="doc-card" href="brand.html">
-        <h3>Brand guide</h3>
-        <p>Logo usage, palette, typography, voice, and marketing copy patterns.</p>
-      </a>
-    </div>
+      <h2>Topics</h2>
+      <div class="docs-hub-grid">
+        <a class="doc-card" href="getting-started.html">
+          <h3>Getting started</h3>
+          <p>Clone the repo, configure the API, run Postgres, Prisma migrations, seed data, and open the console.</p>
+        </a>
+        <a class="doc-card" href="api.html">
+          <h3>REST &amp; OpenAPI</h3>
+          <p>Authentication, <code>/docs/json</code>, Swagger, GraphQL, and v1 endpoints used by the UI.</p>
+        </a>
+        <a class="doc-card" href="data-model.html">
+          <h3>Data model</h3>
+          <p>UUID tenancy, conventions, and an indexed list of every Prisma model with deep links.</p>
+        </a>
+        <a class="doc-card" href="architecture.html">
+          <h3>Architecture</h3>
+          <p>System context, logical containers, control vs data plane, deployment patterns, sequences, and plugin boundary.</p>
+        </a>
+        <a class="doc-card" href="roadmap.html">
+          <h3>Vision &amp; roadmap</h3>
+          <p>Product vision, clean-room traceability, phased roadmap, and non-functional targets.</p>
+        </a>
+        <a class="doc-card" href="platform.html">
+          <h3>Web UI &amp; platform</h3>
+          <p>Stack summary, REST touchpoints for the SPA, bulk import/export, and object graph endpoints.</p>
+        </a>
+        <a class="doc-card" href="llm-assistant.html">
+          <h3>LLM-assisted operations</h3>
+          <p>Design for grounded Q&amp;A, proposal-first changes, bulk mapping, security, and phased rollout.</p>
+        </a>
+        <a class="doc-card" href="cleanroom.html">
+          <h3>Clean-room research</h3>
+          <p>How reference materials map to delivery—and links to the full <code>cleanroom/</code> tree on GitHub.</p>
+        </a>
+        <a class="doc-card" href="brand.html">
+          <h3>Brand guide</h3>
+          <p>Logo usage, palette, typography, voice, and marketing copy patterns.</p>
+        </a>
+      </div>
 
-    <h2>Source files on GitHub</h2>
-    <p>
-      Authoritative Markdown includes
-      <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md">README.md</a>,
-      <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/architecture.md">docs/architecture.md</a>,
-      <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-llm-assistant.md">docs/design-llm-assistant.md</a>, and
-      <a href="https://github.com/amne51ac/intentcenter/blob/main/platform/README.md">platform/README.md</a>.
-    </p>
-  </main>
+      <h2>Source files on GitHub</h2>
+      <p>
+        Authoritative Markdown includes
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md">README.md</a>,
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/architecture.md">docs/architecture.md</a>,
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-llm-assistant.md">docs/design-llm-assistant.md</a>, and
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/platform/README.md">platform/README.md</a>.
+      </p>
+
+      <p style="margin-top: 40px">
+        <a href="index.html">← Product landing</a>
+      </p>
+    </main>
+  </div>
 
   <footer class="site-footer">
     <p>
@@ -94,5 +120,6 @@
       · <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
     </p>
   </footer>
+  <script src="assets/docs-nav.js" defer></script>
 </body>
 </html>

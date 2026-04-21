@@ -237,6 +237,25 @@
   margin-top: 24px;
 }
 
+/* Wide model index (schema reference) */
+.model-index-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.model-index-table td:first-child {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.docs-prose .doc-hero-strip {
+  margin: 24px 0 8px;
+}
+
+.docs-prose p.console-tagline {
+  margin-bottom: 8px;
+}
+
 @media (max-width: 960px) {
   .docs-shell {
     flex-direction: column;

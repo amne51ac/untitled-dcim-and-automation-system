@@ -1,3 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="IntentCenter Prisma data model — UUID tenancy, object types, schema reference." />
+  <title>Data model &amp; schema — IntentCenter</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/docs-layout.css" />
+</head>
+<body class="docs-page" data-docs-page="data-model">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="site-logo" href="index.html">
+        <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="200" height="40" />
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="documentation.html">Docs</a>
+        <a href="https://github.com/amne51ac/intentcenter">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-shell">
+    <aside id="docs-sidebar" class="docs-sidebar" aria-label="Section navigation"></aside>
+    <main class="docs-main docs-prose">
+      <h1>Data model</h1>
+      <p>
+        Phase&nbsp;1 inventory is defined in <strong>Prisma</strong> (<code>platform/prisma/schema.prisma</code>).
+        The API and console read and write these models; REST resource names and bulk import types generally align with
+        the Prisma model names below.
+      </p>
+
+      <nav class="docs-toc" aria-label="On this page">
+        <div class="docs-toc-title">On this page</div>
+        <ul>
+          <li><a href="#conventions">Conventions</a></li>
+          <li><a href="#families">Object families</a></li>
+          <li><a href="#all-models">All object types</a></li>
+        </ul>
+      </nav>
+
+      <h2 id="conventions">Conventions</h2>
+      <ul>
+        <li><strong>Identifiers</strong> — Primary keys are UUIDs on core resources unless noted in the schema.</li>
+        <li><strong>Tenancy</strong> — Data is scoped under <a href="#Organization"><code>Organization</code></a> (and optionally <a href="#Project"><code>Project</code></a> where modeled).</li>
+        <li><strong>Soft delete</strong> — Many models include <code>deletedAt</code>; filtered queries exclude tombstoned rows.</li>
+        <li><strong>Source of truth</strong> — Field lists, relations, and indexes are defined only in Prisma; this page lists every model with a short gloss.</li>
+      </ul>
+
+      <div class="docs-callout">
+        <strong>API mapping.</strong> REST paths and <code>resourceType</code> strings for resource views, bulk import, and
+        search follow the same vocabulary as these models—see <a href="api.html">REST &amp; OpenAPI</a> for HTTP details.
+      </div>
+
+      <h2 id="families">Object families</h2>
+      <p>
+        The schema spans DCIM (sites, racks, devices, cabling), IPAM (VRFs, prefixes, addresses), WAN circuits and
+        providers, identity and automation (users, tokens, jobs, webhooks), and supporting catalogs (device types,
+        roles, tags). Use the index below to jump to a type, or open Prisma for full relation graphs.
+      </p>
+      <ul>
+        <li><strong>Foundation</strong> — <code>Organization</code>, <code>User</code>, <code>ApiToken</code>, <code>Team</code>, <code>Tag</code>, <code>AuditEvent</code></li>
+        <li><strong>Physical &amp; virtual inventory</strong> — <code>Location</code>, <code>Rack</code>, <code>Device</code>, <code>Module</code>, <code>VirtualMachine</code>, <code>VirtualChassis</code>, ports and cables</li>
+        <li><strong>IPAM</strong> — <code>Vrf</code>, <code>Prefix</code>, <code>IpAddress</code>, <code>Vlan</code>, <code>RouteTarget</code></li>
+        <li><strong>Circuits &amp; carriers</strong> — <code>Circuit</code>, <code>Provider</code>, segments and terminations</li>
+        <li><strong>Automation</strong> — <code>JobDefinition</code>, <code>JobRun</code>, <code>WebhookSubscription</code>, <code>ChangeRequest</code></li>
+      </ul>
+
       <h2 id="all-models">All object types</h2>
       <p>Each row is an anchor you can link to (e.g. <code>data-model.html#Device</code>). Authoritative field lists live in Prisma.</p>
       <div style="overflow-x: auto">
@@ -93,3 +167,19 @@
           </tbody>
         </table>
       </div>
+
+      <p style="margin-top: 40px">
+        <a href="documentation.html">← Documentation home</a>
+      </p>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>
+      IntentCenter · <a href="https://github.com/amne51ac/intentcenter">Source</a> ·
+      <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
+    </p>
+  </footer>
+  <script src="assets/docs-nav.js" defer></script>
+</body>
+</html>
