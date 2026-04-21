@@ -4,11 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>IntentCenter — operations console (dev)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        font-family: system-ui, sans-serif;
-        background: #0f1419;
-        color: #e6edf3;
+        font-family: "Inter", system-ui, sans-serif;
+        background: #0b0f18;
+        color: #e8e8ea;
       }
       body {
         max-width: 960px;
@@ -19,15 +25,15 @@
         display: block;
         margin-top: 1rem;
         font-size: 0.85rem;
-        color: #8b949e;
+        color: #7a8090;
       }
       input {
         width: 100%;
         box-sizing: border-box;
         padding: 0.5rem 0.6rem;
         border-radius: 6px;
-        border: 1px solid #30363d;
-        background: #161b22;
+        border: 1px solid #1d2330;
+        background: #10151f;
         color: inherit;
       }
       button {
@@ -35,19 +41,20 @@
         padding: 0.5rem 1rem;
         border-radius: 6px;
         border: none;
-        background: #238636;
-        color: #fff;
+        background: linear-gradient(180deg, #f0c968 0%, #e8b84e 100%);
+        color: #0b0f18;
+        font-weight: 600;
         cursor: pointer;
       }
       button:hover {
-        background: #2ea043;
+        filter: brightness(1.05);
       }
       pre {
         margin-top: 1.5rem;
         padding: 1rem;
         border-radius: 8px;
-        background: #161b22;
-        border: 1px solid #30363d;
+        background: #10151f;
+        border: 1px solid #1d2330;
         overflow: auto;
         font-size: 0.8rem;
       }
@@ -62,7 +69,7 @@
     </style>
   </head>
   <body>
-    <h1>Network inventory — quick API check</h1>
+    <h1>IntentCenter — quick API check</h1>
     <p class="hint">
       Paste a Bearer token from <code>make seed</code> or <code>npm run db:seed</code>, then load devices. Serve this file with any static server
       (or open via file:// — CORS must allow your origin; use the API&rsquo;s host for API base URL).
