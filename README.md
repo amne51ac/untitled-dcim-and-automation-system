@@ -1,4 +1,4 @@
-# IntentCenter — network automation & DCIM platform (planning)
+# IntentCenter — network automation & DCIM platform
 
 **Project:** IntentCenter · **Repository:** [github.com/amne51ac/untitled-dcim-and-automation-system](https://github.com/amne51ac/untitled-dcim-and-automation-system)
 
