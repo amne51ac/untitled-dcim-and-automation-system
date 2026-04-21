@@ -27,8 +27,19 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-panel">
-      <h2>Sign in</h2>
+    <div className="login-page">
+      <div className="login-panel">
+        <div className="login-brand">
+          <img
+            src="/intentcenter-logo.svg"
+            alt="IntentCenter"
+            className="login-wordmark"
+            width={280}
+            height={56}
+          />
+          <p className="brand-tagline login-brand-tagline">The operator console for intent-based networks</p>
+        </div>
+        <h2>Sign in</h2>
       {error ? <div className="error-banner">{error}</div> : null}
       <form onSubmit={onSubmit}>
         <label className="muted" htmlFor="email">
@@ -59,6 +70,7 @@ export function LoginPage() {
           {loading ? "Signing in…" : "Continue"}
         </button>
       </form>
+      </div>
     </div>
   );
 }

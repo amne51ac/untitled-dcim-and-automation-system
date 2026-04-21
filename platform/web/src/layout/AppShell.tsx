@@ -59,8 +59,16 @@ export function AppShell() {
     <div className="app-root">
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <h1>IntentCenter</h1>
-          <p>Network intent & inventory — operator console</p>
+          <NavLink to="/" end className="sidebar-brand-link" title="IntentCenter — Overview">
+            <img
+              src="/intentcenter-logo.svg"
+              alt="IntentCenter"
+              className="sidebar-wordmark"
+              width={200}
+              height={40}
+            />
+          </NavLink>
+          <p className="brand-tagline">Network intent & inventory — operator console</p>
         </div>
 
         {isUser && pinned.length > 0 ? (

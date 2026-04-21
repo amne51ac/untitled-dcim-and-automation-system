@@ -1,17 +1,20 @@
 :root {
-  --bg-deep: #07090d;
-  --bg-panel: #0f1319;
-  --bg-elevated: #161c27;
-  --border: #243044;
-  --text: #e6eaf2;
-  --text-muted: #8b97ab;
-  --text-heading: #f2f5fa;
-  --accent: #c9a227;
-  --accent-dim: #8a7018;
-  --positive: #3ecf8e;
+  /* IntentCenter brand — console dark, signal amber, ops white (see brand sheet v0.3) */
+  --bg-deep: #0b0f18;
+  --bg-panel: #10151f;
+  --bg-elevated: #161c28;
+  --border: #1d2330;
+  --text: #e8e8ea;
+  --text-muted: #7a8090;
+  --text-low: #4a5060;
+  --text-heading: #e8e8ea;
+  --accent: #e8b84e;
+  --accent-hover: #f0c968;
+  --accent-dim: #8a6d2e;
+  --positive: #5fa86c;
   --danger: #f07178;
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --sidebar-w: 15.5rem;
   --radius: 6px;
   --title-page: 1.375rem;
@@ -46,8 +49,9 @@ body {
   font-family: var(--font-sans);
   background: var(--bg-deep);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -69,7 +73,7 @@ a:hover {
   width: var(--sidebar-w);
   flex-shrink: 0;
   align-self: stretch;
-  background: linear-gradient(180deg, #0a0e14 0%, var(--bg-panel) 40%);
+  background: linear-gradient(180deg, #080b12 0%, var(--bg-panel) 42%);
   border-right: 1px solid var(--border);
   padding: 0;
   display: flex;
@@ -90,21 +94,40 @@ a:hover {
   justify-content: center;
 }
 
-.sidebar-brand h1 {
-  margin: 0;
-  font-size: 0.98rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-heading);
+.sidebar-brand-link {
+  display: block;
+  line-height: 0;
+  text-decoration: none !important;
 }
 
-.sidebar-brand p {
-  margin: 0.4rem 0 0;
-  font-size: 0.74rem;
+.sidebar-brand-link:hover .sidebar-wordmark,
+.sidebar-brand-link:focus-visible .sidebar-wordmark {
+  opacity: 0.92;
+}
+
+.sidebar-brand-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.sidebar-wordmark {
+  display: block;
+  height: 1.75rem;
+  width: auto;
+  max-width: 100%;
+}
+
+.brand-tagline {
+  margin: 0.55rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-muted);
-  line-height: 1.4;
-  max-width: 13rem;
+  line-height: 1.45;
+  max-width: 14rem;
 }
 
 .nav-section {
@@ -123,9 +146,9 @@ a:hover {
   border-left: 3px solid var(--accent);
   background: linear-gradient(
     90deg,
-    rgba(201, 162, 39, 0.16) 0%,
-    rgba(22, 28, 39, 0.55) 55%,
-    rgba(15, 19, 25, 0.25) 100%
+    rgba(232, 184, 78, 0.14) 0%,
+    rgba(22, 28, 40, 0.55) 55%,
+    rgba(16, 21, 31, 0.25) 100%
   );
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
@@ -146,7 +169,7 @@ a:hover {
 }
 
 .nav-link.active {
-  background: rgba(201, 162, 39, 0.14);
+  background: rgba(232, 184, 78, 0.12);
   color: var(--accent);
   font-weight: 600;
   box-shadow: inset 3px 0 0 0 var(--accent);
@@ -183,7 +206,7 @@ a:hover {
   min-height: var(--app-chrome-header-min-h);
   padding: var(--app-chrome-header-pad-y) 1.5rem;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(18, 22, 30, 0.97) 0%, rgba(15, 19, 25, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(16, 21, 31, 0.98) 0%, rgba(11, 15, 24, 0.94) 100%);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: flex-start;
@@ -567,10 +590,14 @@ a.btn {
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #d4b03a 0%, var(--accent) 100%);
+  background: linear-gradient(180deg, var(--accent-hover) 0%, var(--accent) 100%);
   border-color: var(--accent-dim);
-  color: #0a0a0a;
+  color: #0b0f18;
   font-weight: 600;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.03);
 }
 
 .btn-ghost {
@@ -589,13 +616,55 @@ a.btn {
   color: var(--text);
 }
 
+.login-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 2rem 1rem;
+  background: radial-gradient(ellipse 100% 70% at 50% -15%, rgba(232, 184, 78, 0.07), transparent 55%), var(--bg-deep);
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.login-wordmark {
+  display: block;
+  height: 2.5rem;
+  width: auto;
+  max-width: min(100%, 17.5rem);
+  margin: 0 auto;
+}
+
+.login-brand-tagline {
+  margin-top: 0.85rem;
+  max-width: 22rem;
+  margin-left: auto;
+  margin-right: auto;
+  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+}
+
 .login-panel {
+  width: 100%;
   max-width: 28rem;
-  margin: 3rem auto;
+  margin: 0 auto;
   padding: 2rem;
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: 10px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+}
+
+.login-panel h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-heading);
 }
 
 .login-panel h2 {

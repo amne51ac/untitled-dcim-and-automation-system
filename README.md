@@ -1,8 +1,8 @@
 # IntentCenter — network automation & DCIM platform (planning)
 
-**Project:** IntentCenter · **Repository:** [github.com/amne51ac/untitled-dcim-and-automation-system](https://github.com/amne51ac/untitled-dcim-and-automation-system)
+**Project:** IntentCenter · **Repository:** [github.com/amne51ac/IntentCenter](https://github.com/amne51ac/IntentCenter) · **[README on GitHub](https://github.com/amne51ac/IntentCenter/blob/main/README.md)**
 
-**Documentation website (GitHub Pages):** after enabling Pages from the `/docs` folder on `main`, the static site is served at **[https://amne51ac.github.io/untitled-dcim-and-automation-system/](https://amne51ac.github.io/untitled-dcim-and-automation-system/)** — landing page, full doc hub, architecture (Mermaid), roadmap, platform API summary, LLM design, clean-room index, and brand guide. See [`docs/PUBLISHING.md`](docs/PUBLISHING.md#github-pages).
+**Documentation website (GitHub Pages):** after enabling Pages from the `/docs` folder on `main`, the static site is served at **[https://amne51ac.github.io/IntentCenter/](https://amne51ac.github.io/IntentCenter/)** — landing page, full doc hub, architecture (Mermaid), roadmap, platform API summary, LLM design, clean-room index, and brand guide. See [`docs/PUBLISHING.md`](docs/PUBLISHING.md#github-pages).
 
 This repository captures **clean-room research** and a **product roadmap** for IntentCenter: a new **network source of truth**, **DCIM**, and **network automation** platform aimed at **provider and distributor scale**: ISPs, backbone operators, hyperscale-adjacent network teams, and large infrastructure organizations that need **throughput**, **resilience**, and **operational maturity**—not lab-sized tooling.
 
@@ -357,7 +357,7 @@ This project is licensed under the **GNU Affero General Public License v3.0** (A
 ## Clone & contribute
 
 ```bash
-git clone https://github.com/amne51ac/untitled-dcim-and-automation-system.git
+git clone https://github.com/amne51ac/IntentCenter.git
 ```
 
 Additional **init / remote** notes (if you fork or mirror) remain in [`docs/PUBLISHING.md`](docs/PUBLISHING.md).

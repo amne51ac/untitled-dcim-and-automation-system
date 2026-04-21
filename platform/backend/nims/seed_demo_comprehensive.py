@@ -372,6 +372,21 @@ def run_comprehensive_demo_inventory(session: Session, org: Organization, now: A
             )
             session.add(prov_bulk)
             session.flush()
+
+        prov_bb = session.execute(
+            select(Provider).where(Provider.organizationId == oid, Provider.name == "dfleet-backbone"),
+        ).scalar_one_or_none()
+        if prov_bb is None:
+            prov_bb = Provider(
+                id=uuid.uuid4(),
+                organizationId=oid,
+                name="dfleet-backbone",
+                asn=65001,
+                updatedAt=now,
+                deletedAt=None,
+            )
+            session.add(prov_bb)
+            session.flush()
         
         ct_eth = session.execute(select(CircuitType).where(CircuitType.slug == "wave-100g")).scalar_one()
         
@@ -541,8 +556,13 @@ def run_comprehensive_demo_inventory(session: Session, org: Organization, now: A
             if (di + 1) % 500 == 0:
                 session.flush()
         
-        # Circuits + segments + terminations (bulk)
-        for ci in range(min(400, n_dev // 6)):
+        # Circuits + segments + terminations (bulk). First MULTI_SEGMENT_CIRCUITS dfleet circuits are 3-leg
+        # (access + backbone + tail) so sample data includes many multi-segment paths.
+        MULTI_SEGMENT_CIRCUITS = 150
+        n_circuits = min(400, n_dev // 6)
+        multi_segment_through = min(MULTI_SEGMENT_CIRCUITS, n_circuits)
+
+        for ci in range(n_circuits):
             cid = f"dfleet-circ-{ci:05d}"
             if session.execute(select(Circuit).where(Circuit.organizationId == oid, Circuit.cid == cid)).scalar_one_or_none():
                 continue
@@ -571,6 +591,31 @@ def run_comprehensive_demo_inventory(session: Session, org: Organization, now: A
                     updatedAt=now,
                 ),
             )
+            if ci < multi_segment_through:
+                session.add(
+                    CircuitSegment(
+                        id=uuid.uuid4(),
+                        circuitId=c.id,
+                        segmentIndex=1,
+                        status=Circuitstatus.ACTIVE,
+                        providerId=prov_bb.id,
+                        label="backbone / long-haul",
+                        bandwidthMbps=10000,
+                        updatedAt=now,
+                    ),
+                )
+                session.add(
+                    CircuitSegment(
+                        id=uuid.uuid4(),
+                        circuitId=c.id,
+                        segmentIndex=2,
+                        status=Circuitstatus.ACTIVE,
+                        providerId=prov_bulk.id,
+                        label="metro / access tail",
+                        bandwidthMbps=10000,
+                        updatedAt=now,
+                    ),
+                )
             loc = site_ids[ci % len(site_ids)]
             session.add(
                 CircuitTermination(
