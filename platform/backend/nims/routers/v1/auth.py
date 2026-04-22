@@ -3,7 +3,7 @@ import re
 
 import bcrypt
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select
@@ -19,6 +19,14 @@ router = APIRouter(tags=["auth"])
 class LoginBody(BaseModel):
     email: str = Field(min_length=3)
     password: str = Field(min_length=1)
+
+
+def _session_cookie_secure(request: Request) -> bool:
+    """Set Secure only when the client used HTTPS (or a proxy forwarded https)."""
+    forwarded = request.headers.get("x-forwarded-proto")
+    if forwarded:
+        return forwarded.split(",")[0].strip().lower() == "https"
+    return request.url.scheme == "https"
 
 
 def _jwt_expires_delta(s: str) -> datetime.timedelta:
@@ -106,6 +114,7 @@ def get_providers() -> dict[str, list[dict[str, object]]]:
 @router.post("/auth/login")
 def post_login(
     body: LoginBody,
+    request: Request,
     response: Response,
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
@@ -137,14 +146,13 @@ def post_login(
         algorithm="HS256",
     )
 
-    secure = settings.node_env == "production"
     max_age = int(_jwt_expires_delta(settings.jwt_expires_in).total_seconds())
     response.set_cookie(
         "nims_session",
         token,
         path="/",
         httponly=True,
-        secure=secure,
+        secure=_session_cookie_secure(request),
         samesite="lax",
         max_age=max_age,
     )
@@ -166,8 +174,8 @@ def post_login(
 
 
 @router.post("/auth/logout")
-def post_logout(response: Response) -> dict[str, bool]:
-    response.delete_cookie("nims_session", path="/")
+def post_logout(request: Request, response: Response) -> dict[str, bool]:
+    response.delete_cookie("nims_session", path="/", secure=_session_cookie_secure(request))
     return {"ok": True}
 
 

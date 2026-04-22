@@ -1057,7 +1057,18 @@ def _ensure_coverage_extras(
             mb = ModuleBay(id=uuid.uuid4(), deviceId=d0, name="0", position=0, updatedAt=now, deletedAt=None)
             session.add(mb)
             session.flush()
-        mod_row = session.execute(select(Module).where(Module.organizationId == oid, Module.deviceId == d0)).scalar_one_or_none()
+        # One device can have many modules (fleet seed); target the module in bay `mb` only.
+        mod_row = session.execute(
+            select(Module)
+            .where(
+                Module.organizationId == oid,
+                Module.deviceId == d0,
+                Module.moduleBayId == mb.id,
+                Module.deletedAt.is_(None),
+            )
+            .order_by(Module.id)
+            .limit(1),
+        ).scalars().first()
         if mod_row is None:
             session.add(
                 Module(
@@ -1072,7 +1083,17 @@ def _ensure_coverage_extras(
                 ),
             )
             session.flush()
-            mod_row = session.execute(select(Module).where(Module.organizationId == oid, Module.deviceId == d0)).scalar_one()
+            mod_row = session.execute(
+                select(Module)
+                .where(
+                    Module.organizationId == oid,
+                    Module.deviceId == d0,
+                    Module.moduleBayId == mb.id,
+                    Module.deletedAt.is_(None),
+                )
+                .order_by(Module.id)
+                .limit(1),
+            ).scalars().first()
         elif mod_row.moduleBayId is None:
             mod_row.moduleBayId = mb.id
             mod_row.updatedAt = now

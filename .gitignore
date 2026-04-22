@@ -35,5 +35,8 @@ htmlcov/
 *.key
 secrets/
 
+# Local AWS deploy kit (copy deployment/env.template to deployment/.env; not tracked)
+deployment/
+
 # Misc
 *.log

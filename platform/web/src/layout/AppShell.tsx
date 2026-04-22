@@ -69,7 +69,7 @@ export function AppShell() {
               height={40}
             />
           </NavLink>
-          <p className="brand-tagline">Network intent & inventory — operator console</p>
+          <p className="brand-tagline">Network source of truth — intent & inventory</p>
         </div>
 
         {isUser && pinned.length > 0 ? (
