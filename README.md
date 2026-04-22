@@ -1,8 +1,8 @@
 # IntentCenter — network automation & DCIM platform
 
-**Project:** IntentCenter · **Repository:** [github.com/amne51ac/intentcenter](https://github.com/amne51ac/intentcenter) · **[README on GitHub](https://github.com/amne51ac/intentcenter/blob/main/README.md)**
+**Project:** IntentCenter · **Live demo:** [https://demo.intentcenter.io](https://demo.intentcenter.io) · **Repository:** <a href="https://github.com/amne51ac/intentcenter"><img src="https://github.com/fluidicon.png" width="20" height="20" style="vertical-align: middle" alt="GitHub" title="GitHub" /></a> [github.com/amne51ac/intentcenter](https://github.com/amne51ac/intentcenter) · <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md"><img src="https://github.com/fluidicon.png" width="18" height="18" style="vertical-align: middle; margin-right: 0.2em" alt="" role="presentation" /></a> [README on GitHub](https://github.com/amne51ac/intentcenter/blob/main/README.md)
 
-**Documentation website (GitHub Pages):** after enabling Pages from the `/docs` folder on `main`, the static site is served at **[https://amne51ac.github.io/intentcenter/](https://amne51ac.github.io/intentcenter/)** — landing page, console-aligned styling, screenshots, full doc hub, architecture (Mermaid), roadmap, platform API summary, LLM design, clean-room index, and brand guide. See [`docs/README.md`](docs/README.md).
+**Documentation website (GitHub Pages):** after enabling Pages from the `/docs` folder on `main`, the static site is served at **[https://amne51ac.github.io/intentcenter/](https://amne51ac.github.io/intentcenter/)** — landing page, console-aligned styling, screenshots, full doc hub, architecture (Mermaid), roadmap, platform API summary, LLM design, and clean-room index. See [`docs/README.md`](docs/README.md).
 
 This repository captures **clean-room research** and a **product roadmap** for IntentCenter: a new **network source of truth**, **DCIM**, and **network automation** platform aimed at **provider and distributor scale**: ISPs, backbone operators, hyperscale-adjacent network teams, and large infrastructure organizations that need **throughput**, **resilience**, and **operational maturity**—not lab-sized tooling.
 
@@ -285,7 +285,7 @@ flowchart LR
 .github/workflows/  # platform-ci.yml — lint, typecheck, web build, pytest (see Tests & CI)
 cleanroom/            # Clean-room capability & design research (Source A–H, AS1)
 docs/                 # Architecture visuals, GitHub Pages static site (console-aligned CSS + screenshots)
-  index.html          # Landing (brand + product screenshots)
+  index.html          # Landing + product screenshots; links to live demo
   documentation.html  # Doc hub + links to Markdown sources on GitHub
   assets/             # site.css, logos, favicon, assets/screenshots/*.png
   architecture.md     # Extended Mermaid diagrams (authoritative alongside architecture.html)

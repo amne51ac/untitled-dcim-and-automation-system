@@ -10,11 +10,11 @@ Key entry points:
 
 | Path | Role |
 |------|------|
-| `index.html` | Branded landing + **in-app screenshots** |
+| `index.html` | Product landing + **in-app screenshots**; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
 | `documentation.html` | Doc hub and links to repo sources |
 | `architecture.md` / `architecture.html` | Target architecture (diagrams) |
 | `design-llm-assistant.md` / `llm-assistant.html` | LLM copilot design |
-| `assets/site.css`, `assets/intentcenter-logo.svg`, `assets/favicon.svg` | Shared styles and marks |
+| `assets/site.css`, `assets/github-mark.svg`, `assets/intentcenter-logo.svg`, `assets/favicon.svg` | Shared styles, GitHub mark for links, and marks |
 | `assets/screenshots/*.png` | Product UI reference imagery for the static site |
 | `.nojekyll` | Disables Jekyll so static assets deploy cleanly |
 

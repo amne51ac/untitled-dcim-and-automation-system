@@ -127,6 +127,67 @@ a:hover {
   text-decoration: none;
 }
 
+/* GitHub (Octicon) — use with .github-icon-link, .github-inline, or .btn-github */
+.github-icon-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  padding: 2px 0;
+}
+
+.github-icon-link:hover,
+.github-icon-link:focus {
+  text-decoration: none;
+}
+
+.github-icon-link img,
+.github-icon-link .github-mark-img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.9;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.github-icon-link:hover img,
+.github-icon-link:focus img {
+  opacity: 1;
+  filter: brightness(1.12);
+}
+
+a.github-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+a.github-inline img.github-mark-inline {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  display: block;
+  opacity: 0.9;
+  vertical-align: middle;
+}
+
+.btn-github,
+a.btn.github-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+}
+
+a.btn .github-btn-icon,
+.btn-github .github-btn-icon {
+  display: block;
+  width: 1.1em;
+  height: 1.1em;
+  flex-shrink: 0;
+}
+
 .site-main {
   flex: 1;
   max-width: 1120px;
