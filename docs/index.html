@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="IntentCenter — open network source of truth, DCIM, IPAM, circuits, safe automation, extensible UI, and flexible sign-in (local, LDAP, Entra, OIDC). Declare your network. Mean it." />
+  <meta name="description" content="IntentCenter — open network source of truth, DCIM, IPAM, circuits, safe automation, extensible UI, and flexible sign-in. What it is, why it exists, and the live demo at demo.intentcenter.io." />
   <title>IntentCenter — Network intent &amp; inventory</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <!-- Warm connection to the live app so the first click from this site to the demo is faster -->
@@ -21,6 +21,7 @@
         <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="240" height="48" />
       </a>
       <nav class="site-nav" aria-label="Primary">
+        <a href="#about">About</a>
         <a href="documentation.html">Docs</a>
         <a href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Live demo</a>
         <a class="github-icon-link" href="https://github.com/amne51ac/intentcenter" rel="noopener noreferrer" target="_blank" aria-label="View repository on GitHub"><img class="github-mark-img" src="assets/github-mark.svg" width="20" height="20" alt=""></a>
@@ -40,11 +41,42 @@
         <a class="btn btn-primary" href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Try the live demo</a>
         <a class="btn btn-secondary" href="documentation.html">Read the docs</a>
         <a class="btn btn-secondary" href="getting-started.html">Get started</a>
+        <a class="btn btn-secondary" href="#about">About the project</a>
         <a class="btn btn-secondary github-with-icon" href="https://github.com/amne51ac/intentcenter" rel="noopener noreferrer" target="_blank"
           ><img class="github-btn-icon" src="assets/github-mark.svg" width="18" height="18" alt="" role="presentation" />
           <span>View on GitHub</span></a
         >
       </div>
+    </section>
+
+    <section class="about-section" id="about" aria-labelledby="about-heading">
+      <p class="section-label" id="about-label">About</p>
+      <h2 id="about-heading">What this project is</h2>
+      <p>
+        <strong>IntentCenter</strong> is an open, API-first platform for <strong>authoritative</strong> network and facility
+        inventory—DCIM, IPAM, circuits, and relationships—plus <strong>safe automation</strong>, <strong>policy</strong>, and
+        <strong>extensibility</strong> (plugins, connectors, operator-grade UX) so teams can run at real scale without giving up
+        auditability, RBAC, or a clear system of record.
+      </p>
+      <h3 class="about-subhead">Why it exists</h3>
+      <p>
+        Large network and infrastructure orgs still feel a familiar gap: <strong>intent</strong> is scattered across tickets,
+        spreadsheets, and tribal knowledge, while the <strong>inventory story</strong> is fragmented. That makes change riskier,
+        automation harder to trust, and triage slower than it should be. We started IntentCenter to build a home where
+        <strong>declared</strong> intent and <strong>grounded</strong> inventory meet—exposed through APIs and a console that
+        NOC, field, and platform engineers can work in every day.
+      </p>
+      <h3 class="about-subhead">How we’re building it</h3>
+      <p>
+        The work sits on <strong>clean-room</strong> research and a <strong>greenfield</strong> implementation path: we
+        synthesize design lessons from reference material (see the
+        <a href="https://github.com/amne51ac/intentcenter/tree/main/cleanroom" rel="noopener noreferrer" target="_blank">clean-room</a>
+        index in the repo) <em>without</em> copying third-party source, and we ship the product under the
+        <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU&nbsp;AGPL-3.0</a> so you can run, study, and extend the platform
+        on your own terms. The <a href="documentation.html">documentation hub</a> and
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md" rel="noopener noreferrer" target="_blank">README</a>
+        carry the full vision, architecture, and roadmap.
+      </p>
     </section>
 
     <section class="screenshot-section" aria-labelledby="product-ui-heading">

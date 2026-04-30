@@ -10,7 +10,7 @@ Key entry points:
 
 | Path | Role |
 |------|------|
-| `index.html` | Product landing + **in-app screenshots**; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
+| `index.html` | Product landing (**About** — what / why / how), **in-app screenshots**; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
 | `documentation.html` | Doc hub and links to repo sources |
 | `platform.html` | Web console + REST summary (inventory, extensibility, auth touchpoints) |
 | `getting-started.html` | Local runbook (Postgres, API, optional **job worker**, env) |

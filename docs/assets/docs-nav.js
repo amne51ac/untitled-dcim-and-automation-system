@@ -78,7 +78,7 @@
     var meta = document.createElement("div");
     meta.className = "docs-nav-meta";
     meta.innerHTML =
-      '<a href="index.html">← Product landing</a><br />' +
+      '<a href="index.html">← Product landing</a> · <a href="index.html#about">About</a><br />' +
       '<a href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Live demo</a><br />' +
       '<a class="github-inline" href="https://github.com/amne51ac/intentcenter" rel="noopener noreferrer" target="_blank">' +
       '<img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />' +
