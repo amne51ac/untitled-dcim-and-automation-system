@@ -2,7 +2,7 @@
 
 **Project:** IntentCenter · **Live demo:** [https://demo.intentcenter.io](https://demo.intentcenter.io) · **Repository:** <a href="https://github.com/amne51ac/intentcenter"><img src="https://github.com/fluidicon.png" width="20" height="20" style="vertical-align: middle" alt="GitHub" title="GitHub" /></a> [github.com/amne51ac/intentcenter](https://github.com/amne51ac/intentcenter) · <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md"><img src="https://github.com/fluidicon.png" width="18" height="18" style="vertical-align: middle; margin-right: 0.2em" alt="" role="presentation" /></a> [README on GitHub](https://github.com/amne51ac/intentcenter/blob/main/README.md)
 
-**Documentation website (GitHub Pages):** after enabling Pages from the `/docs` folder on `main`, the static site is served at **[https://amne51ac.github.io/intentcenter/](https://amne51ac.github.io/intentcenter/)** — landing page, console-aligned styling, screenshots, full doc hub, architecture (Mermaid), roadmap, platform API summary, **in-app AI assistant (copilot)**, **optional MCP** for external LLM clients, design specs, and clean-room index. See [`docs/README.md`](docs/README.md).
+**Documentation website (GitHub Pages):** after enabling Pages from the `/docs` folder on `main`, the static site is served at **[https://amne51ac.github.io/intentcenter/](https://amne51ac.github.io/intentcenter/)** — landing page, console-aligned styling, screenshots, full doc hub, architecture (Mermaid), roadmap, **[wishlist & future work](docs/wishlist.html)** (static page; mirrors the [README checklist](#wishlist-and-deferred-work-phase-1-to-target) below), platform API summary, **in-app AI assistant (copilot)**, **optional MCP** for external LLM clients, design specs, and clean-room index. See [`docs/README.md`](docs/README.md).
 
 This repository captures **clean-room research** and a **product roadmap** for IntentCenter: a new **network source of truth**, **DCIM**, and **network automation** platform aimed at **provider and distributor scale**: ISPs, backbone operators, hyperscale-adjacent network teams, and large infrastructure organizations that need **throughput**, **resilience**, and **operational maturity**—not lab-sized tooling.
 
@@ -207,9 +207,9 @@ Each subsection in [`cleanroom/source-a/`](cleanroom/source-a/INDEX.md) and sibl
 
 ---
 
-## Wishlist & deferred work (Phase 1 → target)
+## Wishlist and deferred work (Phase 1 to target)
 
-Backlog-style items derived from the root [**implementation status**](#architecture-at-a-glance) paragraph and from [`docs/design-api-token-authentication.md`](docs/design-api-token-authentication.md), [`docs/design-auth-user-management.md`](docs/design-auth-user-management.md), [`docs/design-extensibility-plugins-widgets.md`](docs/design-extensibility-plugins-widgets.md), [`docs/design-llm-assistant.md`](docs/design-llm-assistant.md), [`docs/design-mcp-server.md`](docs/design-mcp-server.md), and [`docs/design-validation.md`](docs/design-validation.md). Use **`- [ ]`** as a lightweight tracker; order is not a commitment. The **GitHub Pages** doc hub also lists this as [**Wishlist & future work**](docs/wishlist.html).
+Backlog-style items derived from the root [**implementation status**](#architecture-at-a-glance) paragraph and from [`docs/design-api-token-authentication.md`](docs/design-api-token-authentication.md), [`docs/design-auth-user-management.md`](docs/design-auth-user-management.md), [`docs/design-extensibility-plugins-widgets.md`](docs/design-extensibility-plugins-widgets.md), [`docs/design-llm-assistant.md`](docs/design-llm-assistant.md), [`docs/design-mcp-server.md`](docs/design-mcp-server.md), and [`docs/design-validation.md`](docs/design-validation.md). Use **`- [ ]`** as a lightweight tracker; order is not a commitment. The **GitHub Pages** doc hub also lists this as [**Wishlist and future work**](docs/wishlist.html).
 
 ### Explicitly deferred or not enabled yet
 

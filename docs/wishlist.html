@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="IntentCenter wishlist and deferred work — auth, extensibility, copilot, MCP, validation, and scale — aligned with design specifications." />
+  <title>Wishlist &amp; future work — IntentCenter</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/site.css" />
+  <link rel="stylesheet" href="assets/docs-layout.css" />
+</head>
+<body class="docs-page" data-docs-page="wishlist">
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="site-logo" href="index.html">
+        <img src="assets/intentcenter-logo.svg" alt="IntentCenter" width="200" height="40" />
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="index.html#about">About</a>
+        <a href="documentation.html">Docs</a>
+        <a href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Live demo</a>
+        <a class="github-icon-link" href="https://github.com/amne51ac/intentcenter" rel="noopener noreferrer" target="_blank" aria-label="View repository on GitHub"><img class="github-mark-img" src="assets/github-mark.svg" width="20" height="20" alt=""></a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="docs-shell">
+    <aside id="docs-sidebar" class="docs-sidebar" aria-label="Section navigation"></aside>
+    <main class="docs-main docs-prose">
+      <p class="crumb"><a href="documentation.html">Documentation</a> · Wishlist</p>
+      <h1>Wishlist &amp; future work</h1>
+      <p class="lead">
+        Backlog-style items aligned with Phase&nbsp;1 implementation notes and the design specifications below. This is
+        <strong>not</strong> a committed sequence—use it for planning and triage. The canonical checklist with GitHub task boxes lives in
+        <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/README.md#wishlist-and-deferred-work-phase-1-to-target" rel="noopener noreferrer" target="_blank"
+          ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+          <span>README.md § Wishlist</span></a
+        >.
+      </p>
+
+      <h2>Design references</h2>
+      <ul>
+        <li>
+          <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-auth-user-management.md" rel="noopener noreferrer" target="_blank">Auth &amp; user management</a>
+        </li>
+        <li>
+          <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-api-token-authentication.md" rel="noopener noreferrer" target="_blank">API token authentication</a>
+        </li>
+        <li>
+          <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-extensibility-plugins-widgets.md" rel="noopener noreferrer" target="_blank">Extensibility (plugins &amp; widgets)</a>
+        </li>
+        <li>
+          <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-llm-assistant.md" rel="noopener noreferrer" target="_blank">LLM copilot</a> (incl. §0 consent, §17 RAG, §18 extensibility status)
+        </li>
+        <li>
+          <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-mcp-server.md" rel="noopener noreferrer" target="_blank">Optional MCP server</a>
+        </li>
+        <li>
+          <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-validation.md" rel="noopener noreferrer" target="_blank">Validation &amp; object templates</a>
+        </li>
+      </ul>
+
+      <h2>Explicitly deferred or not enabled yet</h2>
+      <ul>
+        <li><strong>Interactive SSO</strong> — Redirect/callback/JIT for <code class="mono">GET /v1/auth/sso/…/start</code> (501 where not wired); full LDAP/OAuth execution per later IdP phase.</li>
+        <li><strong>Enterprise identity</strong> — SCIM/HR provisioning, multi-org memberships (unless the model is extended).</li>
+        <li><strong>Signed plugin install</strong> — <code class="mono">POST /v1/plugins/install</code> remains 501 until signing, trust roots, and artifact storage.</li>
+        <li><strong>Federated / iframe widgets</strong> — Remote UI loading and sandboxing; federation manifest stays builtin-only for now.</li>
+        <li><strong>Extensibility architecture</strong> — Manifest schema enforcement, page registry (<code class="mono">pageId</code>, context schema), dynamic plugin routes, <code class="mono">GET /v1/ui/page-registry</code>, install/upgrade lifecycle, plugin job definitions bound to workers.</li>
+        <li><strong>Macro read helpers</strong> — Allowlisted server-mediated reads for macros (today <code class="mono">api.*</code> is blocked).</li>
+        <li><strong>GraphQL auth parity</strong> — Same “no silent anonymous access” story as REST; consistent 401 behavior.</li>
+        <li><strong>Authenticated-by-default audit</strong> — Every router including bulk and GraphQL; enumerated public allowlist.</li>
+        <li><strong>Rate limits &amp; exposure</strong> — Login/token abuse paths; production policy for OpenAPI/Swagger.</li>
+        <li><strong>MCP write policy</strong> — Strict preview+consent vs pragmatic WRITE-token parity; rate limits; optional stdio and MCP resources/prompts.</li>
+      </ul>
+
+      <h2>Partially implemented (MVP vs design depth)</h2>
+      <ul>
+        <li><strong>Scale topology</strong> — Multi-region, horizontal API, read replicas, advanced job engine vs Phase&nbsp;1 single process + optional worker.</li>
+        <li><strong>Copilot destructive gate</strong> — Signed apply token / consent artifact enforced server-side with tests.</li>
+        <li><strong>Bulk import consent</strong> — Preview + explicit confirmation for destructive imports.</li>
+        <li><strong>Copilot observability</strong> — Token/tool metrics and tracing per design.</li>
+        <li><strong>RAG</strong> — Per-org controls, embeddings pipeline, vector storage, retention, backfill, cost metrics.</li>
+        <li><strong>Extra LLM adapters</strong> — Azure first-party, Anthropic, Bedrock, Cloudflare-native paths.</li>
+        <li><strong>Schema-aware tools</strong> — Resource model introspection and safe aggregates for the assistant.</li>
+        <li><strong>Portal completeness</strong> — Account, password change, user admin APIs/UX, invites/resets as phased.</li>
+        <li><strong>Validation extensions</strong> — Validator registry for plugin fields; GraphQL sharing domain validators with REST.</li>
+      </ul>
+
+      <h2>Opportunities (alignment)</h2>
+      <ul>
+        <li><strong>Unified page context</strong> — One context object for widget macros and copilot tools.</li>
+        <li><strong>Widget → job slice</strong> — Actions that trigger documented job runs with macro-built, validated input.</li>
+        <li><strong>Shared tool module</strong> — Copilot and MCP invoke the same internal capabilities (no permission drift).</li>
+        <li><strong>Roadmap phases 2–4</strong> — Signed automation artifacts, HA, provider-scale bulk, SLOs, multi-cloud, marketplace.</li>
+      </ul>
+
+      <p style="margin-top: 32px">
+        <a href="documentation.html">← Documentation home</a> ·
+        <a href="roadmap.html">Vision &amp; roadmap</a>
+      </p>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>
+      IntentCenter ·
+      <a class="github-icon-link" href="https://github.com/amne51ac/intentcenter" rel="noopener noreferrer" target="_blank" aria-label="View repository on GitHub"
+        ><img class="github-mark-img" src="assets/github-mark.svg" width="20" height="20" alt=""></a
+      >
+      ·
+      <a href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Live demo</a>
+      ·
+      <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
+    </p>
+  </footer>
+  <script src="assets/docs-nav.js" defer></script>
+</body>
+</html>

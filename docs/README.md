@@ -19,6 +19,8 @@ Key entry points:
 | `environment-variables.md` | **Full** list of `AUTH_*`, `LLM_*`, `CONNECTOR_*`, `PG*`, seeds, etc. |
 | `api.html` | REST/OpenAPI, authentication surfaces, v1 touchpoints; **embedded Swagger UI** from `assets/openapi.json` (regenerate via `export_contracts`) |
 | `architecture.md` / `architecture.html` | Target architecture (diagrams) |
+| `wishlist.html` | **Wishlist & future work** — deferred items and opportunities aligned with design specs (task checklist in root [`README.md`](../README.md#wishlist-and-deferred-work-phase-1-to-target)) |
+| `roadmap.html` | Vision & phased roadmap (summary; full detail on GitHub README) |
 | `design-auth-user-management.md` | **Sign-in & identity**: local email/password, **LDAP** / **Entra** / **OIDC** (at most one external), `AUTH_*` env vs DB, admin API, `GET /v1/auth/providers` |
 | `design-api-token-authentication.md` | Bearer token authentication for automation |
 | `design-llm-assistant.md` | In-app **copilot**: tool-grounded chat, page & chat–aware **next steps**, **skills**, import assist, triage; **§0** preview consent; **§18** extensibility, jobs, connectors |

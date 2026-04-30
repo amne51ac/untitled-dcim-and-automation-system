@@ -208,6 +208,16 @@ export function AssistantPanel({ onMinimize }: { onMinimize: () => void }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, store.activeId, streamStatus]);
 
+  /** Focus composer when the panel opens so the user can type immediately. */
+  useLayoutEffect(() => {
+    const ta = composerRef.current;
+    if (!ta || ta.disabled) return;
+    const id = requestAnimationFrame(() => {
+      composerRef.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   const sizeAssistantComposer = useCallback(() => {
     const el = composerRef.current;
     if (!el) return;
