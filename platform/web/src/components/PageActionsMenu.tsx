@@ -159,34 +159,30 @@ export function PageActionsMenu({
           ) : null}
           {showBulk && resourceType ? (
             <>
-              {resourceType !== "Tenant" ? (
-                <>
-                  <li role="none">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="page-actions-item"
-                      onClick={() => {
-                        csvInputRef.current?.click();
-                      }}
-                    >
-                      Import CSV…
-                    </button>
-                  </li>
-                  <li role="none">
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="page-actions-item"
-                      onClick={() => {
-                        jsonInputRef.current?.click();
-                      }}
-                    >
-                      Import JSON…
-                    </button>
-                  </li>
-                </>
-              ) : null}
+              <li role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="page-actions-item"
+                  onClick={() => {
+                    csvInputRef.current?.click();
+                  }}
+                >
+                  Import CSV…
+                </button>
+              </li>
+              <li role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="page-actions-item"
+                  onClick={() => {
+                    jsonInputRef.current?.click();
+                  }}
+                >
+                  Import JSON…
+                </button>
+              </li>
               <li className="page-actions-submenu-li" role="none">
                 <button
                   type="button"

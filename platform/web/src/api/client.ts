@@ -16,7 +16,9 @@ export function clearStoredToken(): void {
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const token = getStoredToken();
   const headers = new Headers(init.headers);
-  headers.set("Accept", "application/json");
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
   if (init.body !== undefined && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
@@ -25,6 +27,23 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
   }
   return fetch(path, {
     ...init,
+    headers,
+    credentials: "include",
+  });
+}
+
+/** POST with JSON body and server-sent events (e.g. copilot chat stream). */
+export async function apiSsePost(path: string, body: unknown): Promise<Response> {
+  const token = getStoredToken();
+  const headers = new Headers();
+  headers.set("Accept", "text/event-stream");
+  headers.set("Content-Type", "application/json");
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(path, {
+    method: "POST",
+    body: JSON.stringify(body),
     headers,
     credentials: "include",
   });

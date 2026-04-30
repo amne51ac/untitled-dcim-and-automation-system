@@ -47,7 +47,7 @@ export function CatalogItemCreatePage() {
     queryKey: ["bulk-template", cfg?.apiType],
     queryFn: () =>
       apiJson<BulkTemplate>(`/v1/bulk/${encodeURIComponent(cfg!.apiType)}/export?format=json&template=true`),
-    enabled: Boolean(cfg && cfg.apiType !== "Tenant"),
+    enabled: Boolean(cfg),
   });
 
   const fieldKeys = useMemo(() => {
@@ -84,10 +84,6 @@ export function CatalogItemCreatePage() {
 
   if (!cfg) {
     return <Navigate to="/" replace />;
-  }
-
-  if (cfg.apiType === "Tenant") {
-    return <Navigate to={`/inventory/${catalogSlug}`} replace />;
   }
 
   function onSubmit(e: FormEvent) {

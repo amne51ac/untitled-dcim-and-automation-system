@@ -25,7 +25,6 @@ const SIDEBAR_NAV_SECTIONS: SidebarNavSection[] = [
       { kind: "catalog", label: "Rack groups", slug: "rack-groups" },
       { kind: "catalog", label: "Rack reservations", slug: "rack-reservations" },
       { kind: "catalog", label: "Elevations", slug: "elevations" },
-      { kind: "catalog", label: "Tenants", slug: "tenant" },
       { kind: "catalog", label: "Tenant groups", slug: "tenant-groups" },
       { kind: "catalog", label: "Contacts", slug: "contacts" },
       { kind: "catalog", label: "Teams", slug: "teams" },

@@ -18,11 +18,14 @@ model Organization {
   slug      String   @unique
   /// Instance identity: local + IdP (LDAP, Entra, OIDC). Merged with env; env wins.
   identityConfig Json  @default("{}")
+  /// LLM / Copilot: base URL, default model, encrypted API key, flags. Merged with LLM_* env; env wins.
+  llmConfig     Json  @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
 
   users    User[]
+  copilotSkills CopilotSkill[]
   projects Project[]
   apiTokens ApiToken[]
   locations Location[]
@@ -128,9 +131,36 @@ model User {
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  copilotSkills CopilotSkill[]
 
   @@unique([organizationId, email])
   @@index([organizationId])
+}
+
+/// Saved Copilot prompt templates; visibility PRIVATE (owner) or ORG (library).
+enum CopilotSkillVisibility {
+  PRIVATE
+  ORG
+}
+
+model CopilotSkill {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @db.Uuid
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  /// User message template; may include {{id}}, {{resourceType}}, etc.
+  body            String
+  visibility      CopilotSkillVisibility @default(PRIVATE)
+  /// Empty = any page; e.g. ["Device","Rack"]
+  applicableResourceTypes String[] @default([])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([userId])
 }
 
 model ApiToken {

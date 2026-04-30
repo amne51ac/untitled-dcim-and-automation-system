@@ -18,3 +18,12 @@ def test_docs_json() -> None:
     assert res.status_code == 200
     body = res.json()
     assert body["info"]["title"] == "IntentCenter API"
+
+
+def test_copilot_chat_requires_auth() -> None:
+    client = TestClient(app)
+    res = client.post(
+        "/v1/copilot/chat",
+        json={"messages": [{"role": "user", "content": "Hello"}]},
+    )
+    assert res.status_code == 401

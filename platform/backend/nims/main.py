@@ -14,6 +14,7 @@ from nims.routers.v1.bulk import router as bulk_router
 from nims.routers.v1.catalog import router as catalog_router
 from nims.routers.v1.circuits import router as circuits_router
 from nims.routers.v1.connectors import router as connectors_router
+from nims.routers.v1.copilot import router as copilot_router
 from nims.routers.v1.core import router as core_router
 from nims.routers.v1.dcim import router as dcim_router
 from nims.routers.v1.extensions_admin import router as extensions_admin_router
@@ -77,6 +78,7 @@ app.include_router(resource_view_router, prefix="/v1")
 app.include_router(bulk_router, prefix="/v1")
 app.include_router(catalog_router, prefix="/v1")
 app.include_router(connectors_router, prefix="/v1")
+app.include_router(copilot_router, prefix="/v1")
 app.include_router(extensions_admin_router, prefix="/v1")
 
 app.include_router(graphql_router, prefix="/graphql")

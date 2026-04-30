@@ -62,6 +62,23 @@ def columns_dict(inst: Any) -> dict[str, Any]:
     return out
 
 
+def public_organization_for_inventory(org: Any) -> dict[str, Any]:
+    """
+    Organization row exposed as catalog type `Tenant` (tenant scope in inventory).
+    Must not include `llmConfig` or `identityConfig` — they may hold API keys, encrypted
+    secrets, and IdP material; those belong to admin-only settings APIs.
+    """
+    return {
+        "id": j(getattr(org, "id", None)),
+        "name": j(getattr(org, "name", None)),
+        "slug": j(getattr(org, "slug", None)),
+        "createdAt": j(getattr(org, "createdAt", None)),
+        "updatedAt": j(getattr(org, "updatedAt", None)),
+        "deletedAt": j(getattr(org, "deletedAt", None)),
+        "resourceNote": "This is your organization (tenant) record for scope in inventory. LLM, sign-in, and other platform settings are managed under Platform → Administration and are not shown here.",
+    }
+
+
 def serialize_location_type(lt: LocationType) -> dict[str, Any]:
     return columns_dict(lt)
 

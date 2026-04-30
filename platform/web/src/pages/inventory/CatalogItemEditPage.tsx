@@ -42,7 +42,7 @@ export function CatalogItemEditPage() {
     queryKey: ["catalog-item", cfg?.apiType, itemId],
     queryFn: () =>
       apiJson<{ item: Record<string, unknown> }>(`/v1/catalog/${encodeURIComponent(cfg!.apiType)}/items/${encodeURIComponent(itemId)}`),
-    enabled: Boolean(cfg && itemId && cfg.apiType !== "Tenant"),
+    enabled: Boolean(cfg && itemId),
   });
 
   const fieldKeys = useMemo(() => {
@@ -100,10 +100,6 @@ export function CatalogItemEditPage() {
 
   if (!cfg) {
     return <Navigate to="/" replace />;
-  }
-
-  if (cfg.apiType === "Tenant") {
-    return <Navigate to={`/inventory/${catalogSlug}`} replace />;
   }
 
   function onSubmit(e: FormEvent) {

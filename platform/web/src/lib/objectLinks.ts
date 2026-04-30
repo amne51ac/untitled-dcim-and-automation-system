@@ -67,7 +67,7 @@ export function objectEditHref(resourceType: string, id: string): string | null 
   }
 
   const slug = catalogSlugForApiType(t);
-  if (slug && t !== "Tenant") {
+  if (slug) {
     return `/inventory/${slug}/${id}/edit`;
   }
 

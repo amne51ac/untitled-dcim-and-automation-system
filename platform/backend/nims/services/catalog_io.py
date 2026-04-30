@@ -14,6 +14,7 @@ from nims.auth_context import AuthContext, auth_actor_from_context
 from nims.crypto_util import new_correlation_id
 from nims.models_generated import (
     Cable,
+    ChangeRequest,
     Circuit,
     CircuitDiversityGroup,
     CircuitSegment,
@@ -44,12 +45,16 @@ from nims.models_generated import (
     InventoryItem,
     IpAddress,
     IpamNamespace,
+    JobDefinition,
+    JobRun,
+    Location,
     LocationType,
     Manufacturer,
     Module,
     ModuleBay,
     ModuleType,
     MplsDomain,
+    ObjectTemplate,
     Organization,
     PowerConnection,
     PowerFeed,
@@ -60,6 +65,7 @@ from nims.models_generated import (
     Project,
     Provider,
     ProviderNetwork,
+    Rack,
     RackElevation,
     RackGroup,
     RackReservation,
@@ -82,9 +88,10 @@ from nims.models_generated import (
     Vlan,
     VlanGroup,
     Vpn,
+    Vrf,
     WirelessNetwork,
 )
-from nims.serialize import columns_dict
+from nims.serialize import columns_dict, public_organization_for_inventory
 from nims.services.audit import record_audit
 from nims.timeutil import utc_now
 
@@ -179,6 +186,19 @@ _GLOBAL_CATALOG_TYPES = frozenset(
 
 CATALOG_TYPES: frozenset[str] = frozenset(CATALOG_MODELS.keys())
 
+# Core DCIM / automation types not present in CATALOG_MODELS (catalog list is extended types only).
+SEARCH_EXTRA_MODELS: dict[str, type] = {
+    "Device": Device,
+    "Location": Location,
+    "Rack": Rack,
+    "Vrf": Vrf,
+    "Circuit": Circuit,
+    "JobDefinition": JobDefinition,
+    "JobRun": JobRun,
+    "ObjectTemplate": ObjectTemplate,
+    "ChangeRequest": ChangeRequest,
+}
+
 
 def _cable_ids_visible_to_org(db: Session, organization_id: uuid.UUID) -> set[uuid.UUID]:
     q_a = (
@@ -198,6 +218,135 @@ def _cable_ids_visible_to_org(db: Session, organization_id: uuid.UUID) -> set[uu
     return a | b
 
 
+def search_scoped_select(
+    db: Session,
+    organization_id: uuid.UUID,
+    resource_type: str,
+) -> tuple[Any, type] | None:
+    """Base SELECT and main ORM class for one resource type, with org-visibility only (no ORDER BY, no text filter). Same scoping as list_catalog_items. None if not searchable (e.g. Tenant) or no rows possible (e.g. Cable with no visible IDs)."""
+    rt = resource_type.strip()
+    if rt == "Tenant":
+        return None
+    if rt in SEARCH_EXTRA_MODELS:
+        model = SEARCH_EXTRA_MODELS[rt]
+        q = select(model).where(model.organizationId == organization_id)  # type: ignore[union-attr]
+        if hasattr(model, "deletedAt"):
+            q = q.where(model.deletedAt.is_(None))
+        return (q, model)
+    if rt not in CATALOG_MODELS:
+        return None
+    model = CATALOG_MODELS[rt]
+    if rt in _GLOBAL_CATALOG_TYPES:
+        return (select(model), model)
+    if rt == "Project":
+        return (
+            select(Project)
+            .where(Project.organizationId == organization_id)
+            .where(Project.deletedAt.is_(None)),
+            Project,
+        )
+    if rt == "Interface":
+        return (
+            select(Interface)
+            .join(Device, Interface.deviceId == Device.id)
+            .where(Device.organizationId == organization_id)
+            .where(Interface.deletedAt.is_(None)),
+            Interface,
+        )
+    if rt == "Cable":
+        ids = _cable_ids_visible_to_org(db, organization_id)
+        if not ids:
+            return None
+        return (select(Cable).where(Cable.id.in_(ids)), Cable)
+    if rt == "VirtualChassisMember":
+        return (
+            select(VirtualChassisMember)
+            .join(VirtualChassis, VirtualChassisMember.virtualChassisId == VirtualChassis.id)
+            .where(VirtualChassis.organizationId == organization_id),
+            VirtualChassisMember,
+        )
+    if rt == "DeviceRedundancyGroupMember":
+        return (
+            select(DeviceRedundancyGroupMember)
+            .join(DeviceRedundancyGroup, DeviceRedundancyGroupMember.groupId == DeviceRedundancyGroup.id)
+            .where(DeviceRedundancyGroup.organizationId == organization_id),
+            DeviceRedundancyGroupMember,
+        )
+    if rt == "InterfaceRedundancyGroupMember":
+        return (
+            select(InterfaceRedundancyGroupMember)
+            .join(InterfaceRedundancyGroup, InterfaceRedundancyGroupMember.groupId == InterfaceRedundancyGroup.id)
+            .where(InterfaceRedundancyGroup.organizationId == organization_id),
+            InterfaceRedundancyGroupMember,
+        )
+    if rt == "CircuitSegment":
+        return (
+            select(CircuitSegment)
+            .join(Circuit, CircuitSegment.circuitId == Circuit.id)
+            .where(Circuit.organizationId == organization_id),
+            CircuitSegment,
+        )
+    if rt == "TagAssignment":
+        return (
+            select(TagAssignment)
+            .join(Tag, TagAssignment.tagId == Tag.id)
+            .where(Tag.organizationId == organization_id),
+            TagAssignment,
+        )
+    if rt == "DeviceGroupMember":
+        return (
+            select(DeviceGroupMember)
+            .join(DeviceGroup, DeviceGroupMember.groupId == DeviceGroup.id)
+            .where(DeviceGroup.organizationId == organization_id),
+            DeviceGroupMember,
+        )
+    if rt in (
+        "FrontPort",
+        "RearPort",
+        "ConsolePort",
+        "ConsoleServerPort",
+        "PowerPort",
+        "PowerOutlet",
+        "ModuleBay",
+    ):
+        sub = {
+            "FrontPort": FrontPort,
+            "RearPort": RearPort,
+            "ConsolePort": ConsolePort,
+            "ConsoleServerPort": ConsoleServerPort,
+            "PowerPort": PowerPort,
+            "PowerOutlet": PowerOutlet,
+            "ModuleBay": ModuleBay,
+        }[rt]
+        return (
+            select(sub)
+            .join(Device, sub.deviceId == Device.id)
+            .where(Device.organizationId == organization_id)
+            .where(sub.deletedAt.is_(None)),
+            sub,
+        )
+    if rt == "VirtualDeviceContext":
+        return (
+            select(VirtualDeviceContext)
+            .join(Device, VirtualDeviceContext.deviceId == Device.id)
+            .where(Device.organizationId == organization_id)
+            .where(VirtualDeviceContext.deletedAt.is_(None)),
+            VirtualDeviceContext,
+        )
+    if rt == "DeviceBay":
+        return (
+            select(DeviceBay)
+            .join(Device, DeviceBay.parentDeviceId == Device.id)
+            .where(Device.organizationId == organization_id)
+            .where(DeviceBay.deletedAt.is_(None)),
+            DeviceBay,
+        )
+    q2 = select(model).where(model.organizationId == organization_id)  # type: ignore[union-attr]
+    if hasattr(model, "deletedAt"):
+        q2 = q2.where(model.deletedAt.is_(None))
+    return (q2, model)
+
+
 def list_catalog_items(db: Session, organization_id: uuid.UUID, resource_type: str) -> list[dict[str, Any]]:
     rt = resource_type.strip()
     if rt not in CATALOG_MODELS:
@@ -206,7 +355,7 @@ def list_catalog_items(db: Session, organization_id: uuid.UUID, resource_type: s
         org = db.execute(select(Organization).where(Organization.id == organization_id)).scalar_one_or_none()
         if org is None:
             return []
-        return [columns_dict(org)]
+        return [public_organization_for_inventory(org)]
     model = CATALOG_MODELS[rt]
     if rt in _GLOBAL_CATALOG_TYPES:
         if hasattr(model, "name"):

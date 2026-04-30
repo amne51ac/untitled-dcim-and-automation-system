@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiFetch, apiJson } from "../../api/client";
 import { BlockLoader, InlineLoader } from "../../components/Loader";
@@ -79,9 +79,12 @@ export function PluginExtensionsPage() {
 
   const [editingConnectorId, setEditingConnectorId] = useState<string | null>(null);
   const [connForm, setConnForm] = useState(emptyConnectorForm);
+  const [connBaseline, setConnBaseline] = useState<string | null>(null);
   const [connErr, setConnErr] = useState<string | null>(null);
   const [connSaving, setConnSaving] = useState(false);
   const [connDetailLoading, setConnDetailLoading] = useState(false);
+  const [connTesting, setConnTesting] = useState(false);
+  const [connTestResult, setConnTestResult] = useState<string | null>(null);
 
   const plugins = useQuery({
     queryKey: ["plugins"],
@@ -105,7 +108,7 @@ export function PluginExtensionsPage() {
     try {
       const res = await apiJson<{ item: ConnectorDetail }>(`/v1/connectors/${encodeURIComponent(id)}`);
       const it = res.item;
-      setConnForm({
+      const next = {
         name: it.name,
         type: it.type,
         pluginId: it.pluginRegistrationId ?? "",
@@ -113,7 +116,9 @@ export function PluginExtensionsPage() {
         settingsText: JSON.stringify(it.settings && typeof it.settings === "object" ? it.settings : {}, null, 2),
         credentialsText:
           it.credentials && typeof it.credentials === "object" ? JSON.stringify(it.credentials, null, 2) : "",
-      });
+      };
+      setConnForm(next);
+      setConnBaseline(JSON.stringify(next));
     } catch (e) {
       setConnErr(e instanceof Error ? e.message : String(e));
       setEditingConnectorId(null);
@@ -124,15 +129,25 @@ export function PluginExtensionsPage() {
 
   function startNewConnector() {
     setEditingConnectorId("new");
-    setConnForm(emptyConnectorForm());
+    const init = emptyConnectorForm();
+    setConnForm(init);
+    setConnBaseline(JSON.stringify(init));
     setConnErr(null);
+    setConnTestResult(null);
   }
 
   function cancelConnectorForm() {
     setEditingConnectorId(null);
     setConnForm(emptyConnectorForm());
+    setConnBaseline(null);
     setConnErr(null);
+    setConnTestResult(null);
   }
+
+  const connFormDirty = useMemo(() => {
+    if (editingConnectorId == null || connBaseline === null) return false;
+    return JSON.stringify(connForm) !== connBaseline;
+  }, [connBaseline, connForm, editingConnectorId]);
 
   function parseJsonField(raw: string, label: string): Record<string, unknown> {
     const t = raw.trim();
@@ -217,6 +232,53 @@ export function PluginExtensionsPage() {
       setConnErr(x instanceof Error ? x.message : String(x));
     } finally {
       setConnSaving(false);
+    }
+  }
+
+  async function onTestConnector() {
+    setConnErr(null);
+    setConnTestResult(null);
+    let settings: Record<string, unknown>;
+    let credentials: Record<string, unknown> | null = null;
+    try {
+      settings = parseJsonField(connForm.settingsText, "Settings");
+    } catch (err) {
+      setConnErr(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    try {
+      if (connForm.credentialsText.trim()) {
+        credentials = parseJsonField(connForm.credentialsText, "Credentials");
+      } else {
+        credentials = null;
+      }
+    } catch (err) {
+      setConnErr(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    if (!connForm.type.trim()) {
+      setConnErr("Type is required to test.");
+      return;
+    }
+    setConnTesting(true);
+    try {
+      const body: Record<string, unknown> = {
+        type: connForm.type.trim(),
+        settings,
+        credentials,
+      };
+      if (editingConnectorId && editingConnectorId !== "new") {
+        body.connectorId = editingConnectorId;
+      }
+      const r = await apiJson<{ ok: boolean; message: string }>("/v1/connectors/test", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      setConnTestResult(r.ok ? `OK — ${r.message}` : r.message);
+    } catch (x) {
+      setConnErr(x instanceof Error ? x.message : String(x));
+    } finally {
+      setConnTesting(false);
     }
   }
 
@@ -555,9 +617,21 @@ export function PluginExtensionsPage() {
                 {editingConnectorId === "new" ? "New connector" : "Edit connector"}
               </h4>
               {connErr ? <div className="error-banner" style={{ marginBottom: "0.75rem" }}>{connErr}</div> : null}
+              {connTestResult && !connErr ? (
+                <p className="form-hint" style={{ marginBottom: "0.75rem" }} role="status">
+                  {connTestResult}
+                </p>
+              ) : null}
               {connDetailLoading ? <InlineLoader label="Loading connector…" /> : null}
               {!connDetailLoading ? (
                 <form onSubmit={onSaveConnector}>
+                  <div className="admin-form-section" style={{ marginBottom: "1.1rem" }}>
+                    <h4 className="graph-section-title" style={{ margin: "0 0 0.5rem", fontSize: "1.02rem" }}>
+                      Connector identity
+                    </h4>
+                    <p className="muted" style={{ fontSize: "0.86rem", margin: "0 0 0.75rem" }}>
+                      Name, type, plugin link, and whether the connector is enabled.
+                    </p>
                   <div className="plugin-extensions-form-grid">
                     <div>
                       <label className="muted" htmlFor="cc-name">
@@ -621,7 +695,15 @@ export function PluginExtensionsPage() {
                       </label>
                     </div>
                   </div>
-                  <div style={{ marginTop: "0.85rem" }}>
+                  </div>
+                  <div className="admin-form-section" style={{ marginTop: "0.85rem" }}>
+                    <h4 className="graph-section-title" style={{ margin: "0 0 0.5rem", fontSize: "1.02rem" }}>
+                      Connection (HTTP)
+                    </h4>
+                    <p className="muted" style={{ fontSize: "0.86rem", margin: "0 0 0.75rem" }}>
+                      For <code className="mono">http_get</code>, <code className="mono">webhook_outbound</code>, and similar types, <code className="mono">settings</code> must
+                      include <code className="mono">url</code>. Tests run the same probe as a connector sync, without writing health to the row.
+                    </p>
                     <label className="muted" htmlFor="cc-settings">
                       Settings (JSON)
                     </label>
@@ -641,35 +723,56 @@ export function PluginExtensionsPage() {
                         resize: "vertical",
                       }}
                     />
-                  </div>
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <label className="muted" htmlFor="cc-cred">
-                      Credentials (JSON, optional)
-                    </label>
-                    <p className="muted" style={{ fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
-                      On edit, leave empty to keep existing stored credentials. Enter <code className="mono">{"{}"}</code> to
-                      clear.
-                    </p>
-                    <textarea
-                      id="cc-cred"
-                      className="input"
-                      value={connForm.credentialsText}
-                      onChange={(e) => setConnForm((f) => ({ ...f, credentialsText: e.target.value }))}
-                      rows={4}
-                      placeholder="{}"
-                      style={{
-                        display: "block",
-                        width: "100%",
-                        maxWidth: "40rem",
-                        marginTop: "0.35rem",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.82rem",
-                        resize: "vertical",
-                      }}
-                    />
+                    <div style={{ marginTop: "0.75rem" }}>
+                      <label className="muted" htmlFor="cc-cred">
+                        Credentials (JSON, optional)
+                      </label>
+                      <p className="muted" style={{ fontSize: "0.8rem", margin: "0.2rem 0 0" }}>
+                        On edit, leave empty to keep existing stored credentials. Enter <code className="mono">{"{}"}</code>{" "}
+                        to clear.
+                      </p>
+                      <textarea
+                        id="cc-cred"
+                        className="input"
+                        value={connForm.credentialsText}
+                        onChange={(e) => setConnForm((f) => ({ ...f, credentialsText: e.target.value }))}
+                        rows={4}
+                        placeholder="{}"
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          maxWidth: "40rem",
+                          marginTop: "0.35rem",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "0.82rem",
+                          resize: "vertical",
+                        }}
+                      />
+                    </div>
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.9rem" }}>
-                    <button className="btn btn-primary" type="submit" disabled={connSaving}>
+                    <button
+                      className="btn btn-ghost"
+                      type="button"
+                      onClick={() => void onTestConnector()}
+                      disabled={connSaving || connTesting || !connForm.type.trim()}
+                      title={!connForm.type.trim() ? "Set a connector type first" : undefined}
+                    >
+                      {connTesting ? <InlineLoader label="Testing…" /> : "Test connection"}
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      type="submit"
+                      disabled={
+                        connSaving ||
+                        (editingConnectorId != null && editingConnectorId !== "new" && !connFormDirty)
+                      }
+                      title={
+                        editingConnectorId != null && editingConnectorId !== "new" && !connFormDirty
+                          ? "No changes to save"
+                          : undefined
+                      }
+                    >
                       {connSaving ? "…" : editingConnectorId !== "new" ? "Save changes" : "Create connector"}
                     </button>
                     <button type="button" className="btn btn-ghost" onClick={cancelConnectorForm} disabled={connSaving}>

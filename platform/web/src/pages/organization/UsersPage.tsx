@@ -253,11 +253,13 @@ function UserEditForm({
       </button>
     );
   }
+  const displayDirty = (name.trim() || "") !== (row.displayName ?? "").trim() || role !== row.role;
   return (
     <form
       style={{ display: "inline-flex", flexWrap: "wrap", gap: "0.35rem", alignItems: "center" }}
       onSubmit={(e) => {
         e.preventDefault();
+        if (!displayDirty) return;
         onSave({ displayName: name.trim() || undefined, role: role !== row.role ? role : undefined });
         setOpen(false);
       }}
@@ -270,7 +272,12 @@ function UserEditForm({
           </option>
         ))}
       </select>
-      <button type="submit" className="btn btn-primary" disabled={pending}>
+      <button
+        type="submit"
+        className="btn btn-primary"
+        disabled={pending || !displayDirty}
+        title={!displayDirty ? "No changes to save" : undefined}
+      >
         Save
       </button>
       <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>

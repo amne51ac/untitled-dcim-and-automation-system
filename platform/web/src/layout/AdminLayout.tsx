@@ -5,6 +5,7 @@ import { apiJson } from "../api/client";
 
 const FALLBACK_LINKS: { to: string; label: string; end: boolean }[] = [
   { to: "/platform/admin/tokens", label: "API tokens", end: true },
+  { to: "/platform/admin/llm", label: "LLM & AI assistant", end: true },
   { to: "/platform/admin/identity", label: "Sign-in & identity", end: true },
   { to: "/platform/admin/users", label: "User management", end: true },
   { to: "/platform/admin/audit", label: "Audit log", end: true },

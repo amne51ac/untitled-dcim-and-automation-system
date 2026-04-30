@@ -76,6 +76,11 @@ class Userauthprovider(str, enum.Enum):
     OIDC = 'OIDC'
 
 
+class Copilotskillvisibility(str, enum.Enum):
+    PRIVATE = 'PRIVATE'
+    ORG = 'ORG'
+
+
 class Webhookevent(str, enum.Enum):
     CREATE = 'CREATE'
     UPDATE = 'UPDATE'
@@ -148,6 +153,7 @@ class Organization(Base):
     updatedAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
     deletedAt: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP(precision=3))
     identityConfig: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    llmConfig: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
 
     ApiToken: Mapped[list['ApiToken']] = relationship('ApiToken', back_populates='Organization_')
     AuditEvent: Mapped[list['AuditEvent']] = relationship('AuditEvent', back_populates='Organization_')
@@ -172,6 +178,7 @@ class Organization(Base):
     StatusDefinition: Mapped[list['StatusDefinition']] = relationship('StatusDefinition', back_populates='Organization_')
     Tag: Mapped[list['Tag']] = relationship('Tag', back_populates='Organization_')
     Team: Mapped[list['Team']] = relationship('Team', back_populates='Organization_')
+    CopilotSkill: Mapped[list['CopilotSkill']] = relationship('CopilotSkill', back_populates='Organization_')
     TenantGroup: Mapped[list['TenantGroup']] = relationship('TenantGroup', back_populates='Organization_')
     User: Mapped[list['User']] = relationship('User', back_populates='Organization_')
     VirtualChassis: Mapped[list['VirtualChassis']] = relationship('VirtualChassis', back_populates='Organization_')
@@ -988,6 +995,50 @@ class User(Base):
     externalSubject: Mapped[str | None] = mapped_column(Text)
 
     Organization_: Mapped['Organization'] = relationship('Organization', back_populates='User')
+    CopilotSkill: Mapped[list['CopilotSkill']] = relationship('CopilotSkill', back_populates='User_')
+
+
+class CopilotSkill(Base):
+    __tablename__ = 'CopilotSkill'
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['organizationId'],
+            ['Organization.id'],
+            ondelete='CASCADE',
+            onupdate='CASCADE',
+            name='CopilotSkill_organizationId_fkey',
+        ),
+        ForeignKeyConstraint(
+            ['userId'],
+            ['User.id'],
+            ondelete='CASCADE',
+            onupdate='CASCADE',
+            name='CopilotSkill_userId_fkey',
+        ),
+        PrimaryKeyConstraint('id', name='CopilotSkill_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    organizationId: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    userId: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    visibility: Mapped[Copilotskillvisibility] = mapped_column(
+        Enum(
+            Copilotskillvisibility,
+            values_callable=lambda cls: [member.value for member in cls],
+            name='CopilotSkillVisibility',
+        ),
+        nullable=False,
+        server_default=text("'PRIVATE'::\"CopilotSkillVisibility\""),
+    )
+    applicableResourceTypes: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False, server_default=text("ARRAY[]::text[]"))
+    createdAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
+    updatedAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
+
+    Organization_: Mapped['Organization'] = relationship('Organization', back_populates='CopilotSkill')
+    User_: Mapped['User'] = relationship('User', back_populates='CopilotSkill')
 
 
 class VirtualChassis(Base):

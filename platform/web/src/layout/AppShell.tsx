@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { apiJson } from "../api/client";
+import { AssistantPanel } from "../components/AssistantPanel";
 import { CollapsibleNavSection } from "../components/CollapsibleNavSection";
 import { GlobalSearch } from "../components/GlobalSearch";
+import { SparkleIcon } from "../components/SparkleIcon";
 import { SidebarUserMenu } from "../components/SidebarUserMenu";
 import { publicAssetUrl } from "../lib/publicAssetUrl";
 import { SIDEBAR_NAV, navItemToPath, type SidebarNavItem } from "../nav/sidebarNav";
@@ -47,6 +49,7 @@ export function AppShell() {
   });
 
   const [openNavSectionId, setOpenNavSectionId] = useState<string | null>(null);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
   const isUser = me.data?.auth?.mode === "user";
   const isAdmin =
@@ -62,6 +65,7 @@ export function AppShell() {
 
   return (
     <div className="app-root">
+      <div className="app-chrome">
       <aside className="sidebar">
         <div className="sidebar-brand">
           <NavLink to="/" end className="sidebar-brand-link" title="IntentCenter — Overview">
@@ -104,6 +108,15 @@ export function AppShell() {
 
         <div className="sidebar-search-wrap">
           <GlobalSearch />
+          <button
+            type="button"
+            className="ai-assistant-sidebar-btn"
+            onClick={() => setAiAssistantOpen(true)}
+            title="Open AI assistant"
+          >
+            <SparkleIcon />
+            <span>AI assistant</span>
+          </button>
         </div>
 
         <nav className="sidebar-nav-scroll">
@@ -140,8 +153,24 @@ export function AppShell() {
           <SidebarUserMenu me={me.data} />
         </div>
       </aside>
-      <div className="main">
-        <Outlet />
+      <div className="app-center">
+        <div className="main">
+          <Outlet />
+        </div>
+      </div>
+      {aiAssistantOpen ? <AssistantPanel onMinimize={() => setAiAssistantOpen(false)} /> : null}
+      <aside className="app-right-tray" aria-label="App tools">
+        <button
+          type="button"
+          className={"app-right-tray-btn" + (aiAssistantOpen ? " app-right-tray-btn--active" : "")}
+          title={aiAssistantOpen ? "Minimize AI assistant" : "Open AI assistant"}
+          aria-pressed={aiAssistantOpen}
+          onClick={() => setAiAssistantOpen((o) => !o)}
+        >
+          <SparkleIcon />
+          <span className="sr-only">AI assistant</span>
+        </button>
+      </aside>
       </div>
     </div>
   );

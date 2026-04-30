@@ -149,6 +149,13 @@ _CORE_ADMIN_NAV: list[dict[str, Any]] = [
         "source": "core",
     },
     {
+        "id": "admin.llm",
+        "label": "LLM & AI assistant",
+        "href": "/platform/admin/llm",
+        "order": 15,
+        "source": "core",
+    },
+    {
         "id": "admin.identity",
         "label": "Sign-in & identity",
         "href": "/platform/admin/identity",

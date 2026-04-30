@@ -100,6 +100,24 @@ const OI: { key: keyof Group; label: string; secret: boolean }[] = [
   { key: "clientSecret", label: "Client secret", secret: true },
 ];
 
+function draftOverrideForGroup(
+  rows: { key: keyof Group; label: string; secret: boolean }[],
+  group: Group,
+  draft: Record<string, string>,
+): Record<string, string> {
+  const o: Record<string, string> = {};
+  for (const row of rows) {
+    const k = String(row.key);
+    const f = group[k as keyof Group];
+    if (!f || f.locked) continue;
+    const v =
+      (draft[k] as string | undefined) ??
+      (f.sensitive && !f.locked ? (f.configured ? "" : "") : f.value == null ? "" : String(f.value));
+    o[k] = v;
+  }
+  return o;
+}
+
 const EXTERNAL_RADIOS: { value: ExternalIdp; label: string; desc: string }[] = [
   { value: "none", label: "No external directory", desc: "Only email/password, if enabled above" },
   { value: "ldap", label: "LDAP / Active Directory", desc: "Bind and search your directory" },
@@ -188,6 +206,14 @@ export function IdentityPage() {
       setAzure({});
       setOidc({});
     },
+  });
+
+  const testConn = useMutation({
+    mutationFn: (p: { target: "ldap" | "azure_ad" | "oidc"; overrides?: Record<string, string> }) =>
+      apiJson<{ ok: boolean; message: string }>("/v1/admin/identity/test", {
+        method: "POST",
+        body: JSON.stringify(p),
+      }),
   });
 
   const hasUnsavedChanges = useMemo(() => {
@@ -299,6 +325,17 @@ export function IdentityPage() {
             {m.error instanceof Error ? m.error.message : "Save failed"}
           </div>
         )}
+        {testConn.isError && (
+          <div className="error-banner" style={{ marginBottom: "1rem" }} role="status">
+            {testConn.error instanceof Error ? testConn.error.message : "Connection test failed"}
+          </div>
+        )}
+        {testConn.isSuccess && testConn.data ? (
+          <p className="form-hint" style={{ marginBottom: "1rem" }} role="status">
+            {testConn.data.ok ? "Connection test: " : "Connection test failed: "}
+            {testConn.data.message}
+          </p>
+        ) : null}
 
         <form
           onSubmit={(e) => {
@@ -447,6 +484,21 @@ export function IdentityPage() {
                   />
                 );
               })}
+              <p style={{ marginTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={testConn.isPending}
+                  onClick={() => {
+                    void testConn.mutateAsync({
+                      target: "ldap",
+                      overrides: draftOverrideForGroup(LDAP, d.ldap, ldap),
+                    });
+                  }}
+                >
+                  {testConn.isPending ? <InlineLoader label="Testing…" /> : "Test LDAP connection"}
+                </button>
+              </p>
             </div>
           )}
 
@@ -475,6 +527,21 @@ export function IdentityPage() {
                   />
                 );
               })}
+              <p style={{ marginTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={testConn.isPending}
+                  onClick={() => {
+                    void testConn.mutateAsync({
+                      target: "azure_ad",
+                      overrides: draftOverrideForGroup(AZ, d.azure, azure),
+                    });
+                  }}
+                >
+                  {testConn.isPending ? <InlineLoader label="Testing…" /> : "Test Microsoft Entra reachability"}
+                </button>
+              </p>
             </div>
           )}
 
@@ -503,6 +570,21 @@ export function IdentityPage() {
                   />
                 );
               })}
+              <p style={{ marginTop: "0.75rem" }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={testConn.isPending}
+                  onClick={() => {
+                    void testConn.mutateAsync({
+                      target: "oidc",
+                      overrides: draftOverrideForGroup(OI, d.oidc, oidc),
+                    });
+                  }}
+                >
+                  {testConn.isPending ? <InlineLoader label="Testing…" /> : "Test OpenID Connect issuer"}
+                </button>
+              </p>
             </div>
           )}
 

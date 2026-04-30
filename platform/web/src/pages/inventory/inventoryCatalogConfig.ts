@@ -10,7 +10,6 @@ export type CatalogPageDef = {
 
 /** Every `kind: "catalog"` entry in `nav/sidebarNav.ts` must appear here. */
 export const INVENTORY_CATALOG: CatalogPageDef[] = [
-  { slug: "tenant", apiType: "Tenant", title: "Tenants", subtitle: "Current organization (tenant scope for all inventory)", addNoun: "tenant" },
   { slug: "location-types", apiType: "LocationType", title: "Location types", subtitle: "Site / facility taxonomy (global)", addNoun: "location type" },
   { slug: "manufacturers", apiType: "Manufacturer", title: "Manufacturers", subtitle: "Hardware vendors (global)", addNoun: "manufacturer" },
   { slug: "device-types", apiType: "DeviceType", title: "Device types", subtitle: "Manufacturer models (global catalog)", addNoun: "device type" },

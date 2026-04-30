@@ -14,6 +14,7 @@ from nims.auth_context import AuthContext, require_admin
 from nims.deps import get_auth, get_db, require_auth_ctx
 from nims.models_generated import Apitokenrole, ConnectorRegistration, PluginRegistration, User
 from nims.services.connector_credential_store import pack_credentials, unpack_credentials
+from nims.services.connector_probe import packed_credentials_to_dict, probe_by_connector_type
 from nims.timeutil import utc_now
 
 router = APIRouter(prefix="/connectors", tags=["connectors"])
@@ -123,6 +124,80 @@ def list_connectors(
         .all()
     )
     return {"items": [_serialize_list_row(c) for c in rows]}
+
+
+class ConnectorTestBody(BaseModel):
+    """Test an existing registration or a draft (unsaved) connector configuration."""
+
+    connectorId: uuid.UUID | None = None
+    name: str | None = None
+    type: str | None = None
+    enabled: bool | None = None
+    settings: dict[str, Any] | None = None
+    credentials: dict[str, Any] | None = None
+    pluginRegistrationId: uuid.UUID | None = None
+
+
+@router.post("/test")
+def test_connector(
+    body: ConnectorTestBody,
+    db: Session = Depends(get_db),
+    auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
+) -> dict[str, Any]:
+    """
+    Run the same HTTP probe as connector.sync without writing health columns.
+    Use connectorId to test a saved row, or omit it and pass type + settings (and optional credentials) for a draft.
+    """
+    ctx = require_admin(require_auth_ctx(auth))
+    if body.connectorId is not None:
+        c = (
+            db.execute(
+                select(ConnectorRegistration).where(
+                    and_(
+                        ConnectorRegistration.id == body.connectorId,
+                        ConnectorRegistration.organizationId == ctx.organization.id,
+                    )
+                )
+            )
+        ).scalar_one_or_none()
+        if c is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Connector not found")
+        if body.settings is not None and isinstance(body.settings, dict):
+            settings_dict = body.settings
+        else:
+            settings_dict = c.settings if isinstance(c.settings, dict) else {}
+        if body.credentials is not None and isinstance(body.credentials, dict):
+            creds = body.credentials
+        else:
+            creds = packed_credentials_to_dict(c.credentialsEnc)
+        if body.type is not None and str(body.type).strip():
+            ctype = str(body.type).strip()
+        else:
+            ctype = c.type
+    else:
+        if not body.type or not str(body.type).strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="For a draft test, set type and settings (and optional credentials).",
+            )
+        settings_dict = body.settings if isinstance(body.settings, dict) else {}
+        creds = body.credentials if isinstance(body.credentials, dict) else None
+        ctype = str(body.type).strip()
+    out, log = probe_by_connector_type(ctype, settings_dict, creds)
+    if out.get("skipped"):
+        return {
+            "ok": False,
+            "message": str(out.get("reason", "This type has no outbound HTTP probe; use e.g. http_get with settings.url.")),
+            "log": log,
+            "result": out,
+        }
+    ok = bool(out.get("ok"))
+    return {
+        "ok": ok,
+        "message": str(log) if ok else str(out.get("error", log)),
+        "log": log,
+        "result": out,
+    }
 
 
 @router.get("/{connector_id}")

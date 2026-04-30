@@ -60,11 +60,7 @@ export function CatalogListPage() {
         pinLabel={cfg.title}
         bulkResourceType={cfg.apiType}
         onBulkSuccess={() => void qc.invalidateQueries({ queryKey: ["catalog", cfg.apiType] })}
-        addNew={
-          cfg.apiType === "Tenant"
-            ? undefined
-            : { to: `/inventory/${catalogSlug}/new`, label: `Add ${cfg.addNoun}` }
-        }
+        addNew={{ to: `/inventory/${catalogSlug}/new`, label: `Add ${cfg.addNoun}` }}
       />
       <div className="main-body">
         {q.isLoading ? <InlineLoader label="Loading catalog…" /> : null}
@@ -87,7 +83,6 @@ export function CatalogListPage() {
             })}
             onRowClick={(r) => {
               const id = String(r._id);
-              if (cfg.apiType === "Tenant") return;
               navigate(objectViewHref(cfg.apiType, id));
             }}
             actionsColumn={{

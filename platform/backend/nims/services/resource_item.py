@@ -45,7 +45,7 @@ from nims.models_generated import (
     VirtualDeviceContext,
     Vrf,
 )
-from nims.serialize import columns_dict, serialize_circuit
+from nims.serialize import columns_dict, public_organization_for_inventory, serialize_circuit
 from nims.services.catalog_io import _GLOBAL_CATALOG_TYPES, CATALOG_MODELS, _cable_ids_visible_to_org
 
 
@@ -316,4 +316,8 @@ def load_resource_item(
         return serialize_circuit(c) if c is not None else None
 
     row = load_resource_instance(db, organization_id, resource_type, resource_id)
-    return _cd(row) if row else None
+    if row is None:
+        return None
+    if isinstance(row, Organization):
+        return public_organization_for_inventory(row)
+    return _cd(row)
