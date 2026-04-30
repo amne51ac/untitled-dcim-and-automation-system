@@ -107,17 +107,32 @@ export function mergeCustomFieldsIntoDefinition(
   strictCustomAttributes: boolean,
 ): Record<string, unknown> {
   const builtin = getBuiltinFieldSpecs(base);
-  const customSpecs = rows.map(rowToSpec);
+  const customSpecs = rows.filter((r) => !isCustomFieldRowBlank(r)).map(rowToSpec);
   const next: Record<string, unknown> = { ...base, fields: [...builtin, ...customSpecs] };
   if (strictCustomAttributes) next.strictCustomAttributes = true;
   else delete next.strictCustomAttributes;
   return next;
 }
 
+/** Row with no key and no constraints — e.g. freshly added; omit from merge and skip in key validation. */
+export function isCustomFieldRowBlank(row: CustomFieldRow): boolean {
+  return (
+    !row.key.trim() &&
+    !row.label.trim() &&
+    !row.pattern.trim() &&
+    !row.minLength.trim() &&
+    !row.maxLength.trim() &&
+    !row.minimum.trim() &&
+    !row.maximum.trim() &&
+    !row.enumLines.trim() &&
+    !row.required
+  );
+}
+
 export function validateCustomFieldRows(rows: CustomFieldRow[]): string | null {
   const keyRe = /^[a-zA-Z][a-zA-Z0-9_]*$/;
   const seen = new Set<string>();
-  for (const row of rows) {
+  for (const row of rows.filter((r) => !isCustomFieldRowBlank(r))) {
     const k = row.key.trim();
     if (!k) return "Each custom field needs a key (API name).";
     if (!keyRe.test(k)) return `Invalid key "${k}". Use letters, digits, underscore; start with a letter.`;

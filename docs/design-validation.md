@@ -1,7 +1,7 @@
 # Design: Modular, shared API and UI validation
 
-**Status:** Draft  
-**Last updated:** 2026-04-21  
+**Status:** Active (core pieces implemented; extensions ongoing)  
+**Last updated:** 2026-04-30  
 **Related:** [Architecture](architecture.md), [Extensibility (plugins & widgets)](design-extensibility-plugins-widgets.md), [`platform/backend`](../platform/backend/) (FastAPI + Pydantic), [`platform/web`](../platform/web/) (React + TypeScript)
 
 ---
@@ -38,10 +38,12 @@ This document plans a **modular validation system** so that **mutating API input
 
 | Area | Today |
 |------|--------|
-| **API** | FastAPI routes use **Pydantic v2** `BaseModel` classes (often inline in routers) with `Field(...)`, `model_validator`, `Literal`, etc. (e.g. `LocationCreate`, `DeviceCreate` in `routers/v1/dcim.py`). |
-| **OpenAPI** | FastAPI exposes OpenAPI; `/docs/json` is available for machine-readable schema export. |
-| **Frontend** | React + TypeScript + Vite; forms do not yet standardize on a shared schema-driven validator (no Zod/Yup in `package.json` at time of writing). |
-| **Referential checks** | Implemented **imperatively** in route handlers (query DB, raise `HTTPException`). Not yet expressed as reusable, exportable metadata for the UI. |
+| **API** | FastAPI routes validate with **Pydantic v2**; DCIM-oriented request bodies also live in **`nims/schemas/`** (`dcim.py`, `common.py`) with OpenAPI-friendly metadata (including **`x-validation-endpoint`** / **`x-referential`** where applicable). |
+| **OpenAPI & CI** | OpenAPI is exported to `platform/web/src/api/openapi.json` and `docs/assets/openapi.json` (see `nims/tools/export_contracts.py`); CI can fail on unexpected contract drift. |
+| **Frontend** | React + TypeScript + Vite; **AJV** validates against JSON Schema derived from OpenAPI/Pydantic exports; **openapi-typescript** generates types. DCIM create/update forms map **422** `detail[].loc` to fields (including nested paths such as `customAttributes.<key>`). |
+| **Referential checks** | Shared service **`dcim_referential`** plus **`GET /v1/validation/...`** helpers for existence-style checks; OpenAPI documents related fields. |
+| **Custom attributes** | **Object template** definitions declare custom fields (`definition.fields[]` with `builtin: false`) and optional **`strictCustomAttributes`**. Server validates `ResourceExtension.data` / `customAttributes` on write (`template_custom_attributes`); template detail responses may include **`customAttributesJsonSchema`** for client-side Ajv. |
+| **Operator UI** | **Platform → Object templates**: visual **custom attribute fields** editor (key, label, type, required, pattern, lengths, numeric bounds, enum lines, strict mode) plus **full definition JSON** for built-ins and advanced edits. See [§12](#12-operator-ui-object-templates-and-custom-attributes). |
 
 ---
 
@@ -144,21 +146,44 @@ This yields **one rule set** for format/required/bounds; **async checks** are a 
 
 | Phase | Scope |
 |-------|--------|
-| **1. Foundation** | Extract Pydantic models from fat routers into `nims/schemas/`; add OpenAPI export to CI; document standard error shape for the UI. |
-| **2. Client codegen** | Add `openapi-typescript` + chosen validator generator; wire one pilot form (e.g. Location or Device create) end-to-end. |
-| **3. Referential UX** | Introduce caching + optional `validation` endpoints for hot FK fields; align messages with server `code`. |
-| **4. Extensions** | Apply validator registry pattern to plugin/custom attributes if those fields are user-editable. |
+| **1. Foundation** | Extract Pydantic models into `nims/schemas/`; OpenAPI export + CI drift check; stable **422** shape for the UI. **Done (initial DCIM scope).** |
+| **2. Client codegen** | `openapi-typescript` + **AJV** against exported JSON Schema; DCIM Location / Rack / Device forms wired with inline errors and blocked save when invalid. **Done (pilot).** |
+| **3. Referential UX** | **`/v1/validation/...`** endpoints + OpenAPI metadata; client can align async checks with server. **Done (initial set).** Further caching/suggestions as needed. |
+| **4. Extensions** | **Template-driven custom attributes**: definitions edited in UI (`builtin: false` fields + `strictCustomAttributes`); validation on extension writes + client Ajv from **`customAttributesJsonSchema`**. **Done (DCIM templates).** Optional **validator registry** for arbitrary plugins remains future work. |
 
 ---
 
-## 12. Open decisions
+## 12. Operator UI: object templates and custom attributes
+
+Administrators configure **how optional key/value custom data is validated** on Location, Rack, Device (and other template-backed types) from **Platform → Object templates** (`/platform/object-templates`). Editing a template opens either an inline modal or the full-page editor (`/platform/object-templates/:id/edit`).
+
+### 12.1 What the UI provides
+
+| Surface | Purpose |
+|---------|---------|
+| **Help strip** | Summarizes how rules apply to the **Custom attributes** block on DCIM forms and how JSON relates to the visual editor. |
+| **Custom attribute fields** | Visual rows for each **`builtin: false`** field: **Key** (stored property name), **Label**, **Type** (string, textarea, number, integer, boolean, uuid, json), **Required**, optional **regex pattern**, string **min/max length**, numeric **min/max**, **allowed values** (one per line → `enum`). Built-in template fields are **not** editable here; the banner shows how many exist and points operators to JSON for those. |
+| **Strict** | Checkbox mapping to root **`strictCustomAttributes`**: when enabled, only keys declared in custom rows may appear under `customAttributes`. |
+| **Full definition (advanced JSON)** | The entire template **`definition`** document (version, all `fields` including built-ins, strict flag). Changes sync when the textarea blurs; **Save** also applies pending JSON so operators are not forced to tab out first. |
+
+Template saves go through the existing **`PATCH /v1/templates/{id}`** (or create) APIs; the server re-validates before persisting.
+
+### 12.2 Example (Location template, custom field)
+
+The screenshot below shows the **Edit template** screen for a **Location** system template: a **costCenter** custom string field with regex and enum-style allowed values, alongside the JSON definition for built-in fields.
+
+![Edit object template: custom attribute validation (example costCenter field)](./assets/screenshots/object-template-custom-fields-validation.png)
+
+---
+
+## 13. Open decisions
 
 - **Codegen stack:** Zod vs pure JSON Schema (AJV) on the client—pick based on bundle size, DX, and how well OpenAPI → schema tools fit the existing Pydantic models.
 - **GraphQL:** If mutations gain parity with REST, decide whether validation is **only** in domain services shared by REST and GraphQL, or whether GraphQL uses separate input types that must stay in sync (prefer **shared domain validators** called from both entry points).
 
 ---
 
-## 13. References (conceptual)
+## 14. References (conceptual)
 
 - FastAPI [OpenAPI](https://fastapi.tiangolo.com/features/openapi/) and response models.
 - Pydantic v2 [JSON Schema](https://docs.pydantic.dev/latest/concepts/json_schema/) export and validators.

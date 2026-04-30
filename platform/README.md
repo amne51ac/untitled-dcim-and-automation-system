@@ -40,6 +40,13 @@ Full variable list: [`docs/design-auth-user-management.md`](../docs/design-auth-
 
 Reserved / not yet implemented: `POST /v1/plugins/install` (**501**), remote module federation, full KMS for connector secrets. Summary: [§18 in `design-llm-assistant.md`](../docs/design-llm-assistant.md).
 
+## Validation & object templates
+
+- **Shared contracts:** DCIM request bodies live in `nims/schemas/`; OpenAPI is exported (e.g. `nims/tools/export_contracts.py`) for TypeScript types and JSON Schema–based checks in the web app (**AJV**). CI can fail on unexpected OpenAPI/schema drift.
+- **Referential helpers:** `GET /v1/validation/{location-type|location|rack|device-type|device-role|interface|cable-ends}` with query params—used to complement client-side validation before submit.
+- **Custom attributes:** Stored on resource extensions; rules come from the resolved **object template** (`definition.fields` with `builtin: false`, optional `strictCustomAttributes`). **`PATCH`/`POST /v1/templates`** persist definitions; template detail may include **`customAttributesJsonSchema`** for client-side validation on DCIM forms.
+- **Console:** **Platform → Object templates** (`/app/platform/object-templates`) — visual **custom fields** editor plus **full definition JSON** (built-ins). Spec: [`docs/design-validation.md`](../docs/design-validation.md).
+
 ## API touchpoints for the UI
 
 | Feature | Endpoint |
@@ -58,6 +65,8 @@ Reserved / not yet implemented: `POST /v1/plugins/install` (**501**), remote mod
 | Bulk CSV/JSON | `GET /v1/bulk/{resourceType}/export`, `POST /v1/bulk/{resourceType}/import/csv`, `POST /v1/bulk/{resourceType}/import/json` (core types + catalog types — see `bulk.py`) |
 | Object view (UI) | `GET /v1/resource-view/{resourceType}/{id}` — item fields + graph |
 | Graph only | `GET /v1/resource-graph/{resourceType}/{id}` — relationship graph JSON |
+| Referential validation | `GET /v1/validation/...` — see [`validation.py`](backend/nims/routers/v1/validation.py) |
+| Object templates | `GET /v1/templates/resource-types`, `GET/POST /v1/templates`, `GET/PATCH/DELETE /v1/templates/{id}`, `POST /v1/templates/{id}/set-default` |
 
 For full run instructions, database setup, and CI, see the repository root [`README.md`](../README.md).
 

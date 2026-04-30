@@ -270,24 +270,114 @@ h3 {
 .lead {
   font-size: 1.125rem;
   color: var(--text-dim);
-  max-width: 52ch;
+  max-width: min(52ch, 100%);
   margin: 0 0 32px;
 }
 
-/* Landing — about block (what / why / how) */
-.about-section {
-  max-width: 56rem;
-  margin: 0 auto 3.5rem;
-  padding: 2rem 1.5rem 0;
-  border-top: 1px solid var(--border);
+.lead-follow {
+  font-size: 1.125rem;
+  color: var(--text-dim);
+  max-width: min(52ch, 100%);
+  margin: 0 0 32px;
+  line-height: 1.55;
 }
 
-.about-section > h2 {
+.hero .lead {
+  margin-bottom: 0.75rem;
+}
+
+.hero .lead-follow {
+  margin-bottom: 32px;
+}
+
+/* Landing page — sections below hero share divider + vertical rhythm */
+.site-main > .hero ~ section {
+  border-top: 1px solid var(--border);
+  padding-top: 2.5rem;
+  padding-bottom: 2rem;
+}
+
+.site-main > .hero + section {
+  padding-top: 2rem;
+}
+
+.site-main > .hero ~ section:last-child {
+  padding-bottom: 0;
+}
+
+/* Narrow reading column (about, assistant, operations) */
+section.landing-prose {
+  box-sizing: border-box;
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+section.landing-prose > h2 {
   margin-top: 0;
   padding-top: 0;
   border-top: none;
+  margin-bottom: 1rem;
 }
 
+section.landing-prose > p {
+  margin: 0 0 1rem;
+}
+
+section.landing-prose > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Wide bands: title stack aligns to same measure as prose */
+.landing-section-head {
+  box-sizing: border-box;
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.landing-section-head .section-label {
+  margin-bottom: 0.35rem;
+}
+
+.landing-section-head > h2 {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  margin-bottom: 0;
+}
+
+section.pillars-section .grid-2 {
+  margin-top: 1.25rem;
+}
+
+/* Portrait / tall product shots — keep grid row height sane */
+.screenshot-card-portrait img {
+  max-height: min(72vh, 720px);
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: top center;
+  background: var(--bg);
+}
+
+@media (min-width: 901px) {
+  .screenshot-card-portrait {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .screenshot-card-portrait {
+    grid-row: auto;
+  }
+}
+
+/* Landing — about block (what / why / how) */
 .about-section .about-subhead {
   font-size: 1.05rem;
   font-weight: 600;
@@ -296,7 +386,11 @@ h3 {
 }
 
 .hero {
-  padding: 24px 0 48px;
+  box-sizing: border-box;
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 24px 1.5rem 48px;
 }
 
 .hero-actions {
@@ -416,10 +510,6 @@ h3 {
 }
 
 /* —— Product screenshots (match in-app density & chrome) —— */
-.screenshot-section {
-  margin-top: 8px;
-}
-
 .screenshot-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

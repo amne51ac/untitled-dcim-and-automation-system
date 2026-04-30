@@ -24,6 +24,7 @@
       items: [
         { id: "architecture", href: "architecture.html", label: "Diagrams" },
         { id: "roadmap", href: "roadmap.html", label: "Vision & roadmap" },
+        { id: "wishlist", href: "wishlist.html", label: "Wishlist & future work" },
       ],
     },
     {

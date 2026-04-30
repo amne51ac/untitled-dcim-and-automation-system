@@ -139,6 +139,8 @@ More diagrams (multi-region deployment, end-to-end change sequence, plugin bound
 
 **Implementation status:** The diagrams above describe the **target** platform (multi-region, horizontal scale, and similar). The code under [`platform/`](platform/) is a **Phase 1** stack: one **FastAPI** process, **PostgreSQL**, Prisma for **migrations** only, optional **React** static assets served by the API. **Background jobs** can run **in-process** (default) or be **queued** to a separate **worker process** (`nims-worker`, `JOB_EXECUTION_MODE=async` — same `DATABASE_URL` as the API; see [`platform/.env.example`](platform/.env.example) and [`platform/README.md`](platform/README.md)). **Extensibility** in-tree includes org-scoped **plugin registrations**, **UI placements** and widget slots on object views, **connectors** (outbound HTTP with URL policy and optional **Fernet**-encrypted credentials), and merged **admin navigation** from plugin manifests; **federated/iframe** remote widgets and **signed package install** are not enabled yet (see [§18 in `docs/design-llm-assistant.md`](docs/design-llm-assistant.md)). **Sign-in** supports **local email/password** (optional) and configuration for **at most one** of **LDAP**, **Microsoft Entra ID**, or **OpenID Connect**, via the admin **Sign-in & identity** screen and/or `AUTH_*` environment variables (full detail in [`docs/design-auth-user-management.md`](docs/design-auth-user-management.md)).
 
+**Validation:** DCIM mutations use shared **Pydantic** models (`nims/schemas/`) with **OpenAPI** export and CI drift checks; the React console validates key flows with **AJV** against the same exported constraints, maps **422** errors to fields (including nested paths such as `customAttributes`), and can call **`GET /v1/validation/...`** for referential checks. **Object templates** under **Platform → Object templates** combine a **visual editor** for **custom attribute** rules (types, regex, enums, numeric bounds, optional **strict** key policy) with **full-definition JSON** for built-in fields—design and screenshot in [`docs/design-validation.md`](docs/design-validation.md).
+
 ---
 
 ## How we will use the cleanroom output
@@ -202,6 +204,45 @@ Each subsection in [`cleanroom/source-a/`](cleanroom/source-a/INDEX.md) and sibl
 - **Ecosystem** — Certification path for third-party apps; optional **marketplace** mechanics.
 - **Resilience** — **DR** runbooks; tested **restore** drills; game days.
 - **Compliance** — Policy-as-code and data residency as **apps**, not forks; export and **regional** deployment hooks.
+
+---
+
+## Wishlist & deferred work (Phase 1 → target)
+
+Backlog-style items derived from the root [**implementation status**](#architecture-at-a-glance) paragraph and from [`docs/design-api-token-authentication.md`](docs/design-api-token-authentication.md), [`docs/design-auth-user-management.md`](docs/design-auth-user-management.md), [`docs/design-extensibility-plugins-widgets.md`](docs/design-extensibility-plugins-widgets.md), [`docs/design-llm-assistant.md`](docs/design-llm-assistant.md), [`docs/design-mcp-server.md`](docs/design-mcp-server.md), and [`docs/design-validation.md`](docs/design-validation.md). Use **`- [ ]`** as a lightweight tracker; order is not a commitment. The **GitHub Pages** doc hub also lists this as [**Wishlist & future work**](docs/wishlist.html).
+
+### Explicitly deferred or not enabled yet
+
+- [ ] **Interactive SSO** — Wire `GET /v1/auth/sso/{provider}/start` through redirect, callback, and JIT provisioning (today returns **501** where not implemented); full LDAP/OAuth **execution** per Phase 2 IdP work ([`design-auth-user-management.md`](docs/design-auth-user-management.md)).
+- [ ] **Enterprise identity non-goals** — SCIM/HR-driven provisioning, multi-org memberships (unless the data model is extended deliberately).
+- [ ] **Signed plugin install** — `POST /v1/plugins/install` remains **501** until signing, trust roots, and an artifact store exist ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §18, [`design-extensibility-plugins-widgets.md`](docs/design-extensibility-plugins-widgets.md)).
+- [ ] **Federated / iframe remote widgets** — `GET /v1/ui/federation` stays **builtin**-only until remote loading and isolation land.
+- [ ] **Extensibility target architecture** — Formal manifest JSON Schema enforcement; **page registry** (`pageId`, context schema); **dynamic plugin routes**; `GET /v1/ui/page-registry`; install/upgrade/disable lifecycle beyond metadata rows; plugin-contributed **job** materialization linked to worker handlers.
+- [ ] **Macros: approved read helpers** — Allowlisted server-mediated `api.*` (or equivalent) for macro props; today **`api.*` is blocked** ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §18).
+- [ ] **GraphQL auth parity** — Align anonymous access and error shape with REST (**401** vs accidental empty **200**); document policy ([`design-api-token-authentication.md`](docs/design-api-token-authentication.md) §8, §12).
+- [ ] **Strict authenticated-by-default audit** — Router-by-router review: OpenAPI **`401`**, bulk import/export, GraphQL; enumerate public allowlist ([`design-api-token-authentication.md`](docs/design-api-token-authentication.md) §10).
+- [ ] **Token & login hardening** — Rate limits on login and high-abuse paths; optional per-token limits; production posture for **`/docs`** / OpenAPI exposure ([`design-api-token-authentication.md`](docs/design-api-token-authentication.md) §9, §12).
+- [ ] **MCP policy & transport** — Decide **strict** (proposal-only writes + consent artifact) vs **pragmatic** (WRITE token same as curl); rate limits; optional **stdio** proxy; optional **resources/prompts** ([`design-mcp-server.md`](docs/design-mcp-server.md)).
+
+### Partially implemented or “MVP vs design depth”
+
+- [ ] **Target platform topology** — Multi-region, horizontal API tier, read replicas, queue fairness, idempotency story at roadmap depth vs current **Phase 1** single-process + optional worker ([Roadmap](#roadmap-phases-detailed)).
+- [ ] **Copilot: destructive apply gate** — Server-enforced **preview + consent artifact** (signed apply token) for destructive paths per [`design-llm-assistant.md`](docs/design-llm-assistant.md) §0 / §5.5; integration tests that prove **no apply without token**.
+- [ ] **Copilot: bulk import consent** — Mandatory preview + confirmation for destructive imports ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §5.3).
+- [ ] **Copilot observability** — Metrics/tracing as specified (tokens, tool errors, spans per tool) ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §9).
+- [ ] **RAG (§17)** — Per-org admin/env controls, embedding pipeline, storage (**pgvector** vs external), retention, backfill, cost metrics ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §17).
+- [ ] **Additional LLM adapters** — First-party **Azure OpenAI**, **Anthropic**, **Bedrock**, **Cloudflare**-specific paths beyond default OpenAI-compatible HTTP ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §14.1).
+- [ ] **Schema-aware read tools** — e.g. `list_resource_types`, `describe_fields`, controlled aggregates ([`design-llm-assistant.md`](docs/design-llm-assistant.md) §15.2).
+- [ ] **Portal auth UX completion** — Account surface, `PATCH /v1/me` extensions, `POST /v1/me/password`, paginated `/v1/users`*, invite/reset flows as phased in [`design-auth-user-management.md`](docs/design-auth-user-management.md) §6–8.
+- [ ] **Validation: extension registry** — Validator registry for arbitrary plugin/extension fields ([`design-validation.md`](docs/design-validation.md) §7, §11).
+- [ ] **Validation: GraphQL** — Shared domain validators if mutations gain parity with REST ([`design-validation.md`](docs/design-validation.md) §13).
+
+### Opportunities (architecture alignment)
+
+- [ ] **Single page-context model** — Share **page context** between **widget macros** and **copilot tools** with stable **`pageId`** (avoid parallel context definitions) ([`design-extensibility-plugins-widgets.md`](docs/design-extensibility-plugins-widgets.md), [`design-llm-assistant.md`](docs/design-llm-assistant.md)).
+- [ ] **Widget → job vertical slice** — `POST .../jobs/.../run` with macro-built, schema-validated **input** and RBAC-aware visibility ([`design-extensibility-plugins-widgets.md`](docs/design-extensibility-plugins-widgets.md) §6.7).
+- [ ] **One internal tool module** — REST copilot + **MCP** call the same capability layer so permission rules do not fork ([`design-mcp-server.md`](docs/design-mcp-server.md)).
+- [ ] **Roadmap Phases 2–4** — Git-backed signed artifacts, HA, bulk at provider scale, observability SLOs, multi-cloud references, marketplace/certification ([Roadmap](#roadmap-phases-detailed)).
 
 ---
 
@@ -289,6 +330,7 @@ docs/                 # Architecture visuals, GitHub Pages static site (console-
   documentation.html  # Doc hub + links to Markdown sources on GitHub
   assets/             # site.css, logos, favicon, assets/screenshots/*.png
   architecture.md     # Extended Mermaid diagrams (authoritative alongside architecture.html)
+  design-validation.md          # Shared API/UI validation, object templates & custom attributes
   design-llm-assistant.md / design-mcp-server.md  # In-app copilot + optional MCP for external LLM clients
   deployment.md / environment-variables.md  # OpenAPI, Docker/K8s, full env var inventory
   deployment.html     # Pages summary linking to the Markdown sources on GitHub

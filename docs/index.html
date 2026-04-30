@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="IntentCenter — open network source of truth, DCIM, IPAM, circuits, safe automation, in-app AI copilot with tool-grounded answers, optional MCP for external LLMs, extensible UI, and flexible sign-in. Live demo at demo.intentcenter.io." />
+  <meta name="description" content="IntentCenter — open network source of truth, DCIM, IPAM, circuits, safe automation, OpenAPI-aligned validation and configurable custom attributes via object templates, in-app AI copilot with tool-grounded answers, optional MCP for external LLMs, extensible UI, and flexible sign-in. Live demo at demo.intentcenter.io." />
   <title>IntentCenter — Network intent &amp; inventory</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <!-- Warm connection to the live app so the first click from this site to the demo is faster -->
@@ -37,6 +37,11 @@
         IntentCenter is an API-first platform for authoritative network and facility inventory, safe automation, and
         closed-loop operations—built for provider-scale teams that need throughput, resilience, and operational maturity.
       </p>
+      <p class="lead-follow">
+        Forms stay aligned with the API through exported <strong>OpenAPI</strong> constraints; <strong>object templates</strong> let admins
+        define <strong>custom attribute</strong> validation (regex, allowed values, strict key policies) without maintaining a parallel rule
+        set in the UI.
+      </p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Try the live demo</a>
         <a class="btn btn-secondary" href="documentation.html">Read the docs</a>
@@ -49,7 +54,7 @@
       </div>
     </section>
 
-    <section class="about-section" id="about" aria-labelledby="about-heading">
+    <section class="about-section landing-prose" id="about" aria-labelledby="about-heading">
       <p class="section-label" id="about-label">About</p>
       <h2 id="about-heading">What this project is</h2>
       <p>
@@ -70,18 +75,24 @@
       <p>
         The work sits on <strong>clean-room</strong> research and a <strong>greenfield</strong> implementation path: we
         synthesize design lessons from reference material (see the
-        <a href="https://github.com/amne51ac/intentcenter/tree/main/cleanroom" rel="noopener noreferrer" target="_blank">clean-room</a>
+        <a href="https://github.com/amne51ac/intentcenter/tree/main/cleanroom" rel="noopener noreferrer" target="_blank"
+          >clean-room&nbsp;↗</a
+        >
         index in the repo) <em>without</em> copying third-party source, and we ship the product under the
         <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU&nbsp;AGPL-3.0</a> so you can run, study, and extend the platform
         on your own terms. The <a href="documentation.html">documentation hub</a> and
-        <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md" rel="noopener noreferrer" target="_blank">README</a>
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/README.md" rel="noopener noreferrer" target="_blank"
+          >README&nbsp;↗</a
+        >
         carry the full vision, architecture, and roadmap.
       </p>
     </section>
 
     <section class="screenshot-section" aria-labelledby="product-ui-heading">
-      <p class="section-label" id="product-ui-heading">Product</p>
-      <h2>The operator console</h2>
+      <div class="landing-section-head">
+        <p class="section-label" id="product-ui-heading">Product</p>
+        <h2>The operator console</h2>
+      </div>
       <div class="screenshot-grid">
         <figure class="screenshot-card">
           <img src="assets/screenshots/ai-assistant-inventory-charts-maps.png" width="1200" height="675" alt="AI assistant chat showing inventory Q&amp;A, a bar chart of circuits by location, and a map of locations with coordinates" loading="lazy" />
@@ -119,18 +130,32 @@
             Circuit path and relationship map with A-side / Z-side flow—gold arrows and node frames consistent with the in-app graph renderer.
           </figcaption>
         </figure>
+        <figure class="screenshot-card screenshot-card-portrait">
+          <img src="assets/screenshots/object-template-custom-fields-validation.png" width="499" height="1024" alt="Edit object template: custom attribute field builder with regex and allowed values, plus full definition JSON" loading="lazy" />
+          <figcaption>
+            <strong>Object templates</strong>
+            Platform editors configure <strong>custom attribute</strong> validation visually (key, type, pattern, enums, strict mode) while
+            built-in fields remain editable in JSON—see the
+            <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-validation.md" rel="noopener noreferrer" target="_blank"
+              >validation design&nbsp;↗</a
+            >.
+          </figcaption>
+        </figure>
       </div>
     </section>
 
-    <section aria-labelledby="pillars-heading">
-      <p class="section-label">Platform</p>
-      <h2 id="pillars-heading">Four pillars</h2>
+    <section class="pillars-section" aria-labelledby="pillars-heading">
+      <div class="landing-section-head">
+        <p class="section-label" id="pillars-label">Platform</p>
+        <h2 id="pillars-heading">Four pillars</h2>
+      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Source of truth</h3>
           <p>
             DCIM, IPAM, circuits, and relationships in one model—with versioned REST, GraphQL read paths, events, and
-            bulk interchange—not scattered spreadsheets.
+            bulk interchange—not scattered spreadsheets. Optional key/value <strong>custom attributes</strong> follow rules you declare per
+            <strong>object template</strong> (same schema on the server and in the console).
           </p>
         </div>
         <div class="card">
@@ -158,7 +183,7 @@
       </div>
     </section>
 
-    <section style="max-width: 56rem; margin: 0 auto 2.5rem; padding: 0 1.5rem" aria-labelledby="ai-assistant-heading">
+    <section class="landing-prose" aria-labelledby="ai-assistant-heading">
       <p class="section-label" id="ai-assistant-heading">Assistant</p>
       <h2>Intent Center AI</h2>
       <p>
@@ -176,13 +201,23 @@
       <p>
         For behavior, safety, and the optional MCP design, see the
         <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-llm-assistant.md" rel="noopener noreferrer" target="_blank"
-          >LLM assistant</a> and
+          >LLM assistant&nbsp;↗</a
+        >
+        and
         <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-mcp-server.md" rel="noopener noreferrer" target="_blank"
-          >MCP server</a> specifications in the repository.
+          >MCP server&nbsp;↗</a
+        >
+        in the repository.
+      </p>
+      <p>
+        For shared API/console validation, referential checks, and object-template custom attributes, see
+        <a href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-validation.md" rel="noopener noreferrer" target="_blank"
+          >design-validation.md&nbsp;↗</a
+        >.
       </p>
     </section>
 
-    <section style="max-width: 56rem; margin: 0 auto 3rem; padding: 0 1.5rem" aria-labelledby="ops-security-heading">
+    <section class="landing-prose" aria-labelledby="ops-security-heading">
       <p class="section-label" id="ops-security-heading">Operations</p>
       <h2>Sign-in &amp; control plane</h2>
       <p>

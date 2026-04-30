@@ -10,7 +10,7 @@ Key entry points:
 
 | Path | Role |
 |------|------|
-| `index.html` | Product landing (**About** — what / why / how), **in-app assistant & AI**; **in-app screenshots**; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
+| `index.html` | Product landing (**About** — what / why / how), **in-app assistant & AI**, **object templates & validation** screenshot; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
 | `documentation.html` | Doc hub and links to repo sources |
 | `demo-database.md` | **AWS demo:** deploy / `deploy.sh` / ECS (entrypoint runs migrations); console & emergency Prisma notes |
 | `platform.html` | Web console + REST summary (inventory, **copilot & LLM**, extensibility, auth, optional **MCP**) |
@@ -24,8 +24,9 @@ Key entry points:
 | `design-llm-assistant.md` | In-app **copilot**: tool-grounded chat, page & chat–aware **next steps**, **skills**, import assist, triage; **§0** preview consent; **§18** extensibility, jobs, connectors |
 | `design-mcp-server.md` | Optional **MCP** (`/mcp`, API-token auth, role-scoped tools) for external LLM clients |
 | `design-extensibility-plugins-widgets.md` | Widget slots, placements, registry (Phase 0–1) |
+| `design-validation.md` | Shared API/UI validation: OpenAPI + AJV, referential checks, **object templates** & **custom attributes** UI (screenshot in `assets/screenshots/object-template-custom-fields-validation.png`) |
 | `assets/site.css`, `assets/github-mark.svg`, `assets/intentcenter-logo.svg`, `assets/favicon.svg` | Shared styles, GitHub mark for links, and marks |
-| `assets/screenshots/*.png` | Product UI reference imagery for the static site; includes `ai-assistant-inventory-charts-maps.png` (copilot: Q&A, charts, maps) |
+| `assets/screenshots/*.png` | Product UI reference imagery for the static site; includes `ai-assistant-inventory-charts-maps.png` (copilot: Q&A, charts, maps) and `object-template-custom-fields-validation.png` (object template custom-attribute editor) |
 | `.nojekyll` | Disables Jekyll so static assets deploy cleanly |
 
 ### Custom domain

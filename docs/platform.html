@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="IntentCenter Phase 1 — FastAPI, React console, AI copilot &amp; LLM, optional MCP, UI extensibility, jobs, connectors, sign-in options." />
+  <meta name="description" content="IntentCenter Phase 1 — FastAPI, React console, OpenAPI-aligned validation, object templates &amp; custom attributes, AI copilot &amp; LLM, optional MCP, UI extensibility, jobs, connectors, sign-in options." />
   <title>Platform &amp; API — IntentCenter</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -54,6 +54,15 @@
       </li>
       <li><strong>Object view</strong> — <code class="mono">GET /v1/resource-view/{resourceType}/{id}</code> (fields + graph)</li>
       <li><strong>Graph only</strong> — <code class="mono">GET /v1/resource-graph/{resourceType}/{id}</code></li>
+      <li>
+        <strong>Validation &amp; templates</strong> — DCIM forms use schemas exported from OpenAPI (AJV on the client); referential checks via
+        <code class="mono">GET /v1/validation/…</code>. Admins edit <strong>object templates</strong> under Platform (<code class="mono">/app/platform/object-templates</code>): visual
+        <strong>custom attribute</strong> rules plus full-definition JSON. Design:
+        <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-validation.md" rel="noopener noreferrer" target="_blank"
+          ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+          <span>design-validation.md</span></a
+        >.
+      </li>
     </ul>
 
     <h2>Sign-in &amp; identity (summary)</h2>
@@ -139,6 +148,8 @@
         <tr><td>Bulk CSV/JSON</td><td><code class="mono">GET /v1/bulk/{resourceType}/export</code>, <code class="mono">POST /v1/bulk/{resourceType}/import/csv</code>, <code class="mono">POST /v1/bulk/{resourceType}/import/json</code></td></tr>
         <tr><td>Object view</td><td><code class="mono">GET /v1/resource-view/{resourceType}/{id}</code></td></tr>
         <tr><td>Graph only</td><td><code class="mono">GET /v1/resource-graph/{resourceType}/{id}</code></td></tr>
+        <tr><td>Referential validation</td><td><code class="mono">GET /v1/validation/{location-type|location|rack|device-type|device-role|interface|cable-ends}</code> (query params per route)</td></tr>
+        <tr><td>Object templates</td><td><code class="mono">GET /v1/templates/resource-types</code>, <code class="mono">GET/POST /v1/templates</code>, <code class="mono">GET/PATCH/DELETE /v1/templates/{id}</code>, <code class="mono">POST /v1/templates/{id}/set-default</code></td></tr>
       </tbody>
     </table>
 
