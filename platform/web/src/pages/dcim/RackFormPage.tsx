@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMatch, useNavigate, useParams } from "react-router-dom";
-import { apiJson } from "../../api/client";
+import { apiJson, ApiRequestError } from "../../api/client";
+import { ajvErrorsToFieldMap, validateRackCreateBody, validateRackUpdateBody } from "../../validation/ajvDcim";
+import { inputStyleForField, mergeFieldErrors } from "../../validation/formFieldError";
+import { validateCoercedCustomAttributes } from "../../validation/templateCustomAttributes";
 import { coerceCustomAttributes, KeyValueEditor, stringMapFromUnknown } from "../../components/KeyValueEditor";
 import { FormPageShell } from "../../components/FormPageShell";
 import { InlineLoader } from "../../components/Loader";
@@ -17,7 +20,13 @@ export type RackRow = {
 };
 
 type LocOpt = { id: string; name: string };
-type TemplateOpt = { id: string; name: string; slug: string; isDefault?: boolean };
+type TemplateOpt = {
+  id: string;
+  name: string;
+  slug: string;
+  isDefault?: boolean;
+  customAttributesJsonSchema?: Record<string, unknown>;
+};
 
 export function RackFormPage() {
   const navigate = useNavigate();
@@ -89,6 +98,7 @@ export function RackFormPage() {
     );
   }
 
+  const mutErr = createMut.error ?? patchMut.error;
   return (
     <RackFormInner
       mode={isNew ? "create" : "edit"}
@@ -96,7 +106,8 @@ export function RackFormPage() {
       locations={locQ.data?.items ?? []}
       templates={templatesQ.data?.items ?? []}
       submitting={createMut.isPending || patchMut.isPending}
-      error={createMut.error || patchMut.error ? String(createMut.error || patchMut.error) : null}
+      errorBanner={mutErr && !(mutErr instanceof ApiRequestError) ? String(mutErr) : null}
+      serverValidationError={mutErr instanceof ApiRequestError ? mutErr : null}
       onCancel={() => navigate("/dcim/racks")}
       onSaveCreate={(body) => createMut.mutate(body)}
       onSaveEdit={id ? (body) => patchMut.mutate({ id, body }) : undefined}
@@ -110,7 +121,8 @@ function RackFormInner({
   locations,
   templates,
   submitting,
-  error,
+  errorBanner,
+  serverValidationError,
   onCancel,
   onSaveCreate,
   onSaveEdit,
@@ -120,7 +132,8 @@ function RackFormInner({
   locations: LocOpt[];
   templates: TemplateOpt[];
   submitting: boolean;
-  error: string | null;
+  errorBanner: string | null;
+  serverValidationError: ApiRequestError | null;
   onCancel: () => void;
   onSaveCreate: (body: Record<string, unknown>) => void;
   onSaveEdit: ((body: Record<string, unknown>) => void) | undefined;
@@ -132,31 +145,73 @@ function RackFormInner({
   const [kv, setKv] = useState<Record<string, string>>(() =>
     initial?.customAttributes ? stringMapFromUnknown(initial.customAttributes) : {},
   );
+  const [clientFieldErr, setClientFieldErr] = useState<Record<string, string>>({});
+  const [serverFieldErr, setServerFieldErr] = useState<Record<string, string>>({});
   const [localErr, setLocalErr] = useState<string | null>(null);
   const defaultTpl = templates.find((t) => t.isDefault);
+  const fieldErr = useMemo(
+    () => mergeFieldErrors(clientFieldErr, serverFieldErr),
+    [clientFieldErr, serverFieldErr],
+  );
+
+  useEffect(() => {
+    if (serverValidationError) {
+      setServerFieldErr(serverValidationError.fieldMessages());
+    }
+  }, [serverValidationError]);
+
+  function buildBody(): { ok: true; data: Record<string, unknown> } | { ok: false; message: string } {
+    const u = uHeight.trim() ? Number(uHeight) : 42;
+    if (Number.isNaN(u) || u < 1) {
+      return { ok: false, message: "U height must be a positive number." };
+    }
+    if (!name.trim() || !locationId) {
+      return { ok: false, message: "Name and location are required." };
+    }
+    return {
+      ok: true,
+      data: {
+        name: name.trim(),
+        locationId,
+        uHeight: u,
+        templateId: templateId || null,
+        customAttributes: coerceCustomAttributes(kv),
+      },
+    };
+  }
+
+  function computeClientFieldErrors(): Record<string, string> {
+    const built = buildBody();
+    if (!built.ok) {
+      return { _root: built.message };
+    }
+    const v = mode === "create" ? validateRackCreateBody(built.data) : validateRackUpdateBody(built.data);
+    const base = v.ok ? {} : ajvErrorsToFieldMap(v.errors);
+    const tpl = templates.find((t) => t.id === templateId) ?? templates.find((t) => t.isDefault);
+    const caErr = validateCoercedCustomAttributes(coerceCustomAttributes(kv), tpl?.customAttributesJsonSchema);
+    return { ...base, ...caErr };
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLocalErr(null);
-    if (!name.trim() || !locationId) {
-      setLocalErr("Name and location are required.");
+    setServerFieldErr({});
+    const built = buildBody();
+    if (!built.ok) {
+      setLocalErr(built.message);
+      setClientFieldErr({ _root: built.message });
       return;
     }
-    const u = uHeight.trim() ? Number(uHeight) : 42;
-    if (Number.isNaN(u) || u < 1) {
-      setLocalErr("U height must be a positive number.");
-      return;
-    }
-    const body = {
-      name: name.trim(),
-      locationId,
-      uHeight: u,
-      templateId: templateId || null,
-      customAttributes: coerceCustomAttributes(kv),
-    };
-    if (mode === "create") onSaveCreate(body);
-    else onSaveEdit?.(body);
+    const merged = computeClientFieldErrors();
+    setClientFieldErr(merged);
+    if (Object.keys(merged).length > 0) return;
+    if (mode === "create") onSaveCreate(built.data);
+    else onSaveEdit?.(built.data);
   }
+
+  const canSubmitAjv = useMemo(() => {
+    return Object.keys(computeClientFieldErrors()).length === 0;
+  }, [mode, name, locationId, uHeight, templateId, kv, templates]);
 
   return (
     <FormPageShell
@@ -169,32 +224,76 @@ function RackFormInner({
           <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={submitting}>
             Cancel
           </button>
-          <button type="submit" form="rack-form" className="btn btn-primary" disabled={submitting}>
+          <button
+            type="submit"
+            form="rack-form"
+            className="btn btn-primary"
+            disabled={submitting || !canSubmitAjv}
+          >
             {submitting ? "Saving…" : "Save"}
           </button>
         </>
       }
     >
-      <form id="rack-form" className="form-stack" onSubmit={handleSubmit}>
+      <form
+        id="rack-form"
+        className="form-stack"
+        onSubmit={handleSubmit}
+        onBlurCapture={() => {
+          setServerFieldErr({});
+          setClientFieldErr(computeClientFieldErrors());
+        }}
+      >
         {localErr ? <div className="error-banner">{localErr}</div> : null}
-        {error ? <div className="error-banner">{error}</div> : null}
+        {errorBanner ? <div className="error-banner">{errorBanner}</div> : null}
+        {fieldErr._root ? <div className="error-banner">{fieldErr._root}</div> : null}
         <label>
           Name
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+          <input
+            className="input"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "name")}
+            autoComplete="off"
+          />
+          {fieldErr.name ? <span className="muted" style={{ color: "var(--danger)" }}>{fieldErr.name}</span> : null}
         </label>
         <label>
           Location
-          <select className="input" value={locationId} onChange={(e) => setLocationId(e.target.value)}>
+          <select
+            className="input"
+            value={locationId}
+            onChange={(e) => {
+              setLocationId(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "locationId")}
+          >
             {locations.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.name}
               </option>
             ))}
           </select>
+          {fieldErr.locationId ? (
+            <span className="muted" style={{ color: "var(--danger)" }}>{fieldErr.locationId}</span>
+          ) : null}
         </label>
         <label>
           Height (U)
-          <input className="input" value={uHeight} onChange={(e) => setUHeight(e.target.value)} inputMode="numeric" />
+          <input
+            className="input"
+            value={uHeight}
+            onChange={(e) => {
+              setUHeight(e.target.value);
+              setServerFieldErr({});
+            }}
+            inputMode="numeric"
+            style={inputStyleForField(fieldErr, "uHeight")}
+          />
         </label>
         <label>
           Template (optional)
@@ -208,6 +307,13 @@ function RackFormInner({
           </select>
         </label>
         <KeyValueEditor value={kv} onChange={setKv} />
+        {Object.entries(fieldErr)
+          .filter(([k]) => k.startsWith("customAttributes"))
+          .map(([k, msg]) => (
+            <p key={k} className="muted" style={{ color: "var(--danger)", margin: "0.25rem 0 0", fontSize: "0.82rem" }}>
+              {k}: {msg}
+            </p>
+          ))}
       </form>
     </FormPageShell>
   );

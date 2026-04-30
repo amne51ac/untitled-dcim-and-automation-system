@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/site.css" />
   <link rel="stylesheet" href="assets/docs-layout.css" />
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" crossorigin="anonymous" />
 </head>
 <body class="docs-page" data-docs-page="api">
   <header class="site-header">
@@ -38,9 +39,18 @@
       </p>
 
       <div class="docs-callout">
-        <strong>Machine-readable spec.</strong> With the API running (default <code>http://localhost:8080</code>),
-        fetch OpenAPI JSON at <code>GET /docs/json</code> and Swagger UI at <code>GET /docs</code>.
+        <strong>Live instance.</strong> With the API running (default <code>http://localhost:8080</code>), use interactive
+        Swagger at <code>GET /docs</code> and fresh JSON at <code>GET /docs/json</code>.
+        <strong>Static site below:</strong> bundled snapshot at <a href="assets/openapi.json"><code>assets/openapi.json</code></a>
+        (run <code class="mono">uv run --directory platform/backend python -m nims.tools.export_contracts</code> to refresh).
       </div>
+
+      <h2 id="openapi-explorer">Full OpenAPI specification</h2>
+      <p>
+        Embedded <strong>Swagger UI</strong> loads the repo snapshot next to this page. Use <strong>Try it out</strong> against
+        your API origin (e.g. add <code>http://localhost:8080</code> under servers if needed).
+      </p>
+      <div id="swagger-ui" class="swagger-ui-wrap" role="region" aria-label="OpenAPI explorer"></div>
 
       <h2 id="auth">Authentication</h2>
       <p>
@@ -166,6 +176,22 @@
       <a href="https://www.gnu.org/licenses/agpl-3.0.html">AGPL-3.0</a>
     </p>
   </footer>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js" crossorigin="anonymous"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      if (typeof SwaggerUIBundle === "undefined") return;
+      var specUrl = new URL("assets/openapi.json", window.location.href).href;
+      SwaggerUIBundle({
+        url: specUrl,
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+        layout: "StandaloneLayout",
+        tryItOutEnabled: true,
+      });
+    });
+  </script>
   <script src="assets/docs-nav.js" defer></script>
 </body>
 </html>

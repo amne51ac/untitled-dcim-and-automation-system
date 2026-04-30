@@ -1,11 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiJson } from "../../api/client";
 import { FormPageShell } from "../../components/FormPageShell";
 import { InlineLoader } from "../../components/Loader";
 import { objectViewHref } from "../../lib/objectLinks";
+import {
+  ObjectTemplateDefinitionPanel,
+  type ObjectTemplateDefinitionPanelHandle,
+} from "./ObjectTemplateDefinitionPanel";
+import {
+  getCustomFieldSpecs,
+  specToRow,
+  validateCustomFieldRows,
+} from "./objectTemplateCustomFieldsMerge";
 
 type TemplateItem = {
   id: string;
@@ -24,9 +33,10 @@ export function ObjectTemplateEditPage() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [definitionJson, setDefinitionJson] = useState("{}");
+  const [definition, setDefinition] = useState<Record<string, unknown>>({});
   const [isDefault, setIsDefault] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const definitionPanelRef = useRef<ObjectTemplateDefinitionPanelHandle>(null);
 
   const detailQ = useQuery({
     queryKey: ["template", templateId],
@@ -40,7 +50,7 @@ export function ObjectTemplateEditPage() {
     if (!item) return;
     setName(item.name);
     setDescription(item.description ?? "");
-    setDefinitionJson(JSON.stringify(item.definition ?? {}, null, 2));
+    setDefinition(structuredClone(item.definition ?? {}) as Record<string, unknown>);
     setIsDefault(item.isDefault);
   }, [item]);
 
@@ -75,21 +85,21 @@ export function ObjectTemplateEditPage() {
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     setErr(null);
-    let definition: Record<string, unknown> | undefined;
-    try {
-      definition = JSON.parse(definitionJson) as Record<string, unknown>;
-      if (definition === null || typeof definition !== "object" || Array.isArray(definition)) {
-        setErr("Definition must be a JSON object.");
-        return;
-      }
-    } catch {
-      setErr("Definition must be valid JSON.");
+    const flushed = definitionPanelRef.current?.flushJson();
+    if (!flushed?.ok) {
+      setErr(flushed?.error ?? "Could not apply definition.");
+      return;
+    }
+    const def = flushed.definition;
+    const customErr = validateCustomFieldRows(getCustomFieldSpecs(def).map(specToRow));
+    if (customErr) {
+      setErr(customErr);
       return;
     }
     patchMut.mutate({
       name: name.trim(),
       description: description.trim() || null,
-      definition,
+      definition: def,
       isDefault,
     });
   }
@@ -126,10 +136,12 @@ export function ObjectTemplateEditPage() {
           Description
           <textarea className="input" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
         </label>
-        <label>
-          Definition (JSON)
-          <textarea className="input mono" rows={12} value={definitionJson} onChange={(e) => setDefinitionJson(e.target.value)} spellCheck={false} />
-        </label>
+        <ObjectTemplateDefinitionPanel
+          ref={definitionPanelRef}
+          definition={definition}
+          onDefinitionChange={setDefinition}
+          jsonTextareaRows={12}
+        />
         <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
           <span>Default template for this resource type</span>

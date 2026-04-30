@@ -1,8 +1,7 @@
 import uuid
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -22,6 +21,16 @@ from nims.models_generated import (
     Rack,
     ResourceExtension,
 )
+from nims.schemas.dcim import (
+    CableCreate,
+    DeviceCreate,
+    DeviceUpdate,
+    InterfaceCreate,
+    LocationCreate,
+    LocationUpdate,
+    RackCreate,
+    RackUpdate,
+)
 from nims.serialize import (
     columns_dict,
     serialize_cable,
@@ -35,6 +44,15 @@ from nims.serialize import (
     serialize_rack,
 )
 from nims.services.audit import record_audit
+from nims.services.dcim_referential import (
+    validate_cable_interfaces_in_org,
+    validate_device_create_fks,
+    validate_device_update_fks,
+    validate_location_create_fks,
+    validate_location_update_fks,
+    validate_rack_create_fks,
+    validate_rack_update_fks,
+)
 from nims.services.extensions import (
     delete_extension_for_resource,
     extension_map,
@@ -45,91 +63,6 @@ from nims.services.webhooks import dispatch_webhooks
 from nims.timeutil import utc_now
 
 router = APIRouter(tags=["dcim"])
-
-
-class LocationCreate(BaseModel):
-    name: str = Field(min_length=1)
-    slug: str = Field(min_length=1)
-    locationTypeId: uuid.UUID
-    parentId: uuid.UUID | None = None
-    description: str | None = None
-    latitude: float | None = Field(default=None, ge=-90, le=90)
-    longitude: float | None = Field(default=None, ge=-180, le=180)
-    templateId: uuid.UUID | None = None
-    customAttributes: dict[str, Any] | None = None
-
-    @model_validator(mode="after")
-    def lat_lon_both_or_neither(self) -> "LocationCreate":
-        if (self.latitude is None) != (self.longitude is None):
-            raise ValueError("latitude and longitude must both be set or both omitted")
-        return self
-
-
-class LocationUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1)
-    slug: str | None = Field(default=None, min_length=1)
-    locationTypeId: uuid.UUID | None = None
-    parentId: uuid.UUID | None = None
-    description: str | None = None
-    latitude: float | None = Field(default=None, ge=-90, le=90)
-    longitude: float | None = Field(default=None, ge=-180, le=180)
-    templateId: uuid.UUID | None = None
-    customAttributes: dict[str, Any] | None = None
-
-
-class RackCreate(BaseModel):
-    name: str = Field(min_length=1)
-    locationId: uuid.UUID
-    uHeight: int | None = Field(default=None, gt=0)
-    templateId: uuid.UUID | None = None
-    customAttributes: dict[str, Any] | None = None
-
-
-class RackUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1)
-    locationId: uuid.UUID | None = None
-    uHeight: int | None = Field(default=None, gt=0)
-    templateId: uuid.UUID | None = None
-    customAttributes: dict[str, Any] | None = None
-
-
-class DeviceCreate(BaseModel):
-    name: str = Field(min_length=1)
-    deviceTypeId: uuid.UUID
-    deviceRoleId: uuid.UUID
-    rackId: uuid.UUID | None = None
-    serialNumber: str | None = None
-    positionU: int | None = None
-    face: str | None = None
-    status: Literal["PLANNED", "STAGED", "ACTIVE", "DECOMMISSIONED"] | None = None
-    templateId: uuid.UUID | None = None
-    customAttributes: dict[str, Any] | None = None
-
-
-class DeviceUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1)
-    deviceTypeId: uuid.UUID | None = None
-    deviceRoleId: uuid.UUID | None = None
-    rackId: uuid.UUID | None = None
-    serialNumber: str | None = None
-    positionU: int | None = None
-    face: str | None = None
-    status: Literal["PLANNED", "STAGED", "ACTIVE", "DECOMMISSIONED"] | None = None
-    templateId: uuid.UUID | None = None
-    customAttributes: dict[str, Any] | None = None
-
-
-class InterfaceCreate(BaseModel):
-    name: str = Field(min_length=1)
-    type: str = "ethernet"
-    macAddress: str | None = None
-    mtu: int | None = None
-
-
-class CableCreate(BaseModel):
-    interfaceAId: uuid.UUID
-    interfaceBId: uuid.UUID
-    label: str | None = None
 
 
 def _resolve_template_id(
@@ -292,6 +225,7 @@ def create_location(
     auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
 ) -> dict[str, object]:
     ctx = require_write(require_auth_ctx(auth))
+    validate_location_create_fks(db, ctx.organization.id, body)
     correlation_id = new_correlation_id()
     now = utc_now()
     created = Location(
@@ -398,6 +332,7 @@ def update_location(
     ).scalar_one_or_none()
     if loc is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    validate_location_update_fks(db, ctx.organization.id, location_id, body)
     correlation_id = new_correlation_id()
     before = columns_dict(loc)
     raw = body.model_dump(exclude_unset=True)
@@ -412,20 +347,8 @@ def update_location(
     if "description" in raw:
         loc.description = raw["description"]
     if "latitude" in raw or "longitude" in raw:
-        if "latitude" not in raw or "longitude" not in raw:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="latitude and longitude must be updated together",
-            )
-        la = raw["latitude"]
-        lo = raw["longitude"]
-        if (la is None) != (lo is None):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="latitude and longitude must both be set or both cleared",
-            )
-        loc.latitude = la
-        loc.longitude = lo
+        loc.latitude = body.latitude
+        loc.longitude = body.longitude
     loc.updatedAt = utc_now()
     _apply_extension_patch(db, ctx.organization.id, "Location", location_id, body)
     record_audit(
@@ -573,6 +496,7 @@ def create_rack(
     auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
 ) -> dict[str, object]:
     ctx = require_write(require_auth_ctx(auth))
+    validate_rack_create_fks(db, ctx.organization.id, body)
     correlation_id = new_correlation_id()
     now = utc_now()
     created = Rack(
@@ -671,6 +595,7 @@ def update_rack(
     ).scalar_one_or_none()
     if r is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    validate_rack_update_fks(db, ctx.organization.id, body)
     correlation_id = new_correlation_id()
     before = columns_dict(r)
     raw = body.model_dump(exclude_unset=True)
@@ -817,6 +742,7 @@ def create_device(
     auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
 ) -> dict[str, object]:
     ctx = require_write(require_auth_ctx(auth))
+    validate_device_create_fks(db, ctx.organization.id, body)
     correlation_id = new_correlation_id()
     now = utc_now()
     st = Devicestatus(body.status) if body.status else Devicestatus.PLANNED
@@ -937,6 +863,7 @@ def update_device(
     ).scalar_one_or_none()
     if dev is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    validate_device_update_fks(db, ctx.organization.id, body)
     correlation_id = new_correlation_id()
     before = columns_dict(dev)
     raw = body.model_dump(exclude_unset=True)
@@ -1115,6 +1042,7 @@ def create_cable(
     auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
 ) -> dict[str, object]:
     ctx = require_write(require_auth_ctx(auth))
+    validate_cable_interfaces_in_org(db, ctx.organization.id, body.interfaceAId, body.interfaceBId)
     correlation_id = new_correlation_id()
     now = utc_now()
     created = Cable(

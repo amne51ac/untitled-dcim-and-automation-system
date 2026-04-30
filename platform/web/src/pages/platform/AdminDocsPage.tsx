@@ -32,6 +32,24 @@ export function AdminDocsPage() {
         <p className="muted" style={{ marginTop: "1rem" }}>
           REST base path: <code className="mono">/v1/…</code> · Session cookies are for the console; use Bearer tokens for automation.
         </p>
+
+        <section style={{ marginTop: "1.75rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>Full OpenAPI (Swagger)</h2>
+          <p className="muted" style={{ marginBottom: "0.65rem", fontSize: "0.9rem" }}>
+            Same interactive explorer as <code className="mono">GET /docs</code>, embedded below for this deployment.
+          </p>
+          <iframe
+            title="OpenAPI Swagger UI"
+            src="/docs"
+            style={{
+              width: "100%",
+              height: "min(85vh, 920px)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              background: "var(--bg-elevated)",
+            }}
+          />
+        </section>
       </div>
     </>
   );

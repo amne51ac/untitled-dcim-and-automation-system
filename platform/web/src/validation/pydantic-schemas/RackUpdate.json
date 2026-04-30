@@ -1,0 +1,75 @@
+{
+  "properties": {
+    "name": {
+      "anyOf": [
+        {
+          "description": "Display name (non-empty).",
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Name"
+    },
+    "locationId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Relocate the rack to another site/room.",
+      "title": "Locationid",
+      "x-referential": "location",
+      "x-validation-endpoint": "/v1/validation/location"
+    },
+    "uHeight": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uheight"
+    },
+    "templateId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templateid"
+    },
+    "customAttributes": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Customattributes"
+    }
+  },
+  "title": "RackUpdate",
+  "type": "object"
+}

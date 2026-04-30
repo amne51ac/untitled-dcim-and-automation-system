@@ -21,6 +21,8 @@
     "db:seed:bulk": "uv run --directory backend nims-seed-bulk",
     "lint": "eslint web",
     "typecheck": "tsc --noEmit -p web/tsconfig.json",
+    "api:export": "NIMS_MCP_ENABLE=false uv run --directory backend python -m nims.tools.export_contracts",
+    "codegen:web": "npm run codegen:openapi-types --prefix web",
     "test": "uv run --directory backend pytest -q",
     "ci": "npm run lint && npm run typecheck && npm run build && uv run --directory backend ruff check nims && uv run --directory backend pytest -q"
   },

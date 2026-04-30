@@ -1,0 +1,14 @@
+{
+  "title": "pydantic-json-schemas",
+  "version": 1,
+  "models": [
+    "LocationCreate",
+    "LocationUpdate",
+    "RackCreate",
+    "RackUpdate",
+    "DeviceCreate",
+    "DeviceUpdate",
+    "InterfaceCreate",
+    "CableCreate"
+  ]
+}

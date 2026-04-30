@@ -1,0 +1,150 @@
+{
+  "properties": {
+    "name": {
+      "anyOf": [
+        {
+          "description": "Display name (non-empty).",
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Name"
+    },
+    "deviceTypeId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Devicetypeid",
+      "x-referential": "device_type",
+      "x-validation-endpoint": "/v1/validation/device-type"
+    },
+    "deviceRoleId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Deviceroleid",
+      "x-referential": "device_role",
+      "x-validation-endpoint": "/v1/validation/device-role"
+    },
+    "rackId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rackid",
+      "x-referential": "rack",
+      "x-validation-endpoint": "/v1/validation/rack"
+    },
+    "serialNumber": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Serialnumber"
+    },
+    "positionU": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Positionu"
+    },
+    "face": {
+      "anyOf": [
+        {
+          "enum": [
+            "front",
+            "rear"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Face"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "enum": [
+            "PLANNED",
+            "STAGED",
+            "ACTIVE",
+            "DECOMMISSIONED"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Status"
+    },
+    "templateId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templateid"
+    },
+    "customAttributes": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Customattributes"
+    }
+  },
+  "title": "DeviceUpdate",
+  "type": "object"
+}

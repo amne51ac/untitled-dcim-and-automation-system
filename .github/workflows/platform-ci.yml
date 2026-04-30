@@ -74,6 +74,13 @@ jobs:
         run: uv run ruff check nims
         working-directory: platform/backend
 
+      - name: OpenAPI and JSON schema contract (no drift)
+        run: |
+          npm run api:export
+          npm run codegen:web
+          git diff --exit-code -- web/src/api/openapi.json web/src/api/generated-openapi.ts web/src/validation/pydantic-schemas
+        working-directory: platform
+
       - name: Typecheck web
         run: npm run typecheck
 

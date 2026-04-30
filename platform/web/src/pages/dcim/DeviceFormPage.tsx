@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useMatch, useNavigate, useParams } from "react-router-dom";
-import { apiJson } from "../../api/client";
+import { apiJson, ApiRequestError } from "../../api/client";
+import { ajvErrorsToFieldMap, validateDeviceCreateBody, validateDeviceUpdateBody } from "../../validation/ajvDcim";
+import { inputStyleForField, mergeFieldErrors } from "../../validation/formFieldError";
+import { validateCoercedCustomAttributes } from "../../validation/templateCustomAttributes";
 import { coerceCustomAttributes, KeyValueEditor, stringMapFromUnknown } from "../../components/KeyValueEditor";
 import { FormPageShell } from "../../components/FormPageShell";
 import { InlineLoader } from "../../components/Loader";
@@ -23,7 +26,13 @@ export type DeviceRow = {
   customAttributes?: Record<string, unknown>;
 };
 
-type TemplateOpt = { id: string; name: string; slug: string; isDefault?: boolean };
+type TemplateOpt = {
+  id: string;
+  name: string;
+  slug: string;
+  isDefault?: boolean;
+  customAttributesJsonSchema?: Record<string, unknown>;
+};
 type DtOpt = { id: string; model: string; manufacturer: { name: string } };
 type DrOpt = { id: string; name: string };
 type RackOpt = { id: string; name: string };
@@ -106,6 +115,7 @@ export function DeviceFormPage() {
     );
   }
 
+  const mutErr = createMut.error ?? patchMut.error;
   return (
     <DeviceFormInner
       mode={isNew ? "create" : "edit"}
@@ -115,7 +125,8 @@ export function DeviceFormPage() {
       racks={racksQ.data?.items ?? []}
       templates={templatesQ.data?.items ?? []}
       submitting={createMut.isPending || patchMut.isPending}
-      error={createMut.error || patchMut.error ? String(createMut.error || patchMut.error) : null}
+      errorBanner={mutErr && !(mutErr instanceof ApiRequestError) ? String(mutErr) : null}
+      serverValidationError={mutErr instanceof ApiRequestError ? mutErr : null}
       onCancel={() => navigate("/dcim/devices")}
       onSaveCreate={(body) => createMut.mutate(body)}
       onSaveEdit={id ? (body) => patchMut.mutate({ id, body }) : undefined}
@@ -132,7 +143,8 @@ function DeviceFormInner({
   racks,
   templates,
   submitting,
-  error,
+  errorBanner,
+  serverValidationError,
   onCancel,
   onSaveCreate,
   onSaveEdit,
@@ -145,7 +157,8 @@ function DeviceFormInner({
   racks: RackOpt[];
   templates: TemplateOpt[];
   submitting: boolean;
-  error: string | null;
+  errorBanner: string | null;
+  serverValidationError: ApiRequestError | null;
   onCancel: () => void;
   onSaveCreate: (body: Record<string, unknown>) => void;
   onSaveEdit: ((body: Record<string, unknown>) => void) | undefined;
@@ -165,35 +178,103 @@ function DeviceFormInner({
   const [kv, setKv] = useState<Record<string, string>>(() =>
     initial?.customAttributes ? stringMapFromUnknown(initial.customAttributes) : {},
   );
+  const [clientFieldErr, setClientFieldErr] = useState<Record<string, string>>({});
+  const [serverFieldErr, setServerFieldErr] = useState<Record<string, string>>({});
   const [localErr, setLocalErr] = useState<string | null>(null);
   const defaultTpl = templates.find((t) => t.isDefault);
+  const fieldErr = useMemo(
+    () => mergeFieldErrors(clientFieldErr, serverFieldErr),
+    [clientFieldErr, serverFieldErr],
+  );
+
+  useEffect(() => {
+    if (serverValidationError) {
+      setServerFieldErr(serverValidationError.fieldMessages());
+    }
+  }, [serverValidationError]);
+
+  function buildBody(): { ok: true; data: Record<string, unknown> } | { ok: false; message: string } {
+    if (!name.trim() || !deviceTypeId || !deviceRoleId) {
+      return { ok: false, message: "Name, device type, and role are required." };
+    }
+    const posRaw = positionU.trim();
+    let positionUval: number | null = null;
+    if (posRaw) {
+      const n = Number(posRaw);
+      if (Number.isNaN(n)) {
+        return { ok: false, message: "Position (U) must be a number." };
+      }
+      positionUval = n;
+    }
+    const rawFace = face.trim().toLowerCase();
+    let faceVal: "front" | "rear" | null = null;
+    if (rawFace === "front" || rawFace === "rear") {
+      faceVal = rawFace;
+    } else if (rawFace) {
+      return { ok: false, message: 'Face must be "front" or "rear" (or leave empty).' };
+    }
+    return {
+      ok: true,
+      data: {
+        name: name.trim(),
+        deviceTypeId,
+        deviceRoleId,
+        rackId: rackId || null,
+        serialNumber: serialNumber.trim() || null,
+        positionU: positionUval,
+        face: faceVal,
+        status,
+        templateId: templateId || null,
+        customAttributes: coerceCustomAttributes(kv),
+      },
+    };
+  }
+
+  function computeClientFieldErrors(): Record<string, string> {
+    const built = buildBody();
+    if (!built.ok) {
+      return { _root: built.message };
+    }
+    const v = mode === "create" ? validateDeviceCreateBody(built.data) : validateDeviceUpdateBody(built.data);
+    const base = v.ok ? {} : ajvErrorsToFieldMap(v.errors);
+    const tpl = templates.find((t) => t.id === templateId) ?? templates.find((t) => t.isDefault);
+    const caErr = validateCoercedCustomAttributes(coerceCustomAttributes(kv), tpl?.customAttributesJsonSchema);
+    return { ...base, ...caErr };
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLocalErr(null);
-    if (!name.trim() || !deviceTypeId || !deviceRoleId) {
-      setLocalErr("Name, device type, and role are required.");
+    setServerFieldErr({});
+    const built = buildBody();
+    if (!built.ok) {
+      setLocalErr(built.message);
+      setClientFieldErr({ _root: built.message });
       return;
     }
-    const body: Record<string, unknown> = {
-      name: name.trim(),
-      deviceTypeId,
-      deviceRoleId,
-      rackId: rackId || null,
-      serialNumber: serialNumber.trim() || null,
-      positionU: positionU.trim() ? Number(positionU) : null,
-      face: face.trim() || null,
-      status,
-      templateId: templateId || null,
-      customAttributes: coerceCustomAttributes(kv),
-    };
-    if (body.positionU !== null && Number.isNaN(body.positionU as number)) {
-      setLocalErr("Position (U) must be a number.");
-      return;
-    }
-    if (mode === "create") onSaveCreate(body);
-    else onSaveEdit?.(body);
+    const merged = computeClientFieldErrors();
+    setClientFieldErr(merged);
+    if (Object.keys(merged).length > 0) return;
+    if (mode === "create") onSaveCreate(built.data);
+    else onSaveEdit?.(built.data);
   }
+
+  const canSubmitAjv = useMemo(() => {
+    return Object.keys(computeClientFieldErrors()).length === 0;
+  }, [
+    mode,
+    name,
+    deviceTypeId,
+    deviceRoleId,
+    rackId,
+    serialNumber,
+    positionU,
+    face,
+    status,
+    templateId,
+    kv,
+    templates,
+  ]);
 
   return (
     <FormPageShell
@@ -206,15 +287,29 @@ function DeviceFormInner({
           <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={submitting}>
             Cancel
           </button>
-          <button type="submit" form="device-form" className="btn btn-primary" disabled={submitting}>
+          <button
+            type="submit"
+            form="device-form"
+            className="btn btn-primary"
+            disabled={submitting || !canSubmitAjv}
+          >
             {submitting ? "Saving…" : "Save"}
           </button>
         </>
       }
     >
-      <form id="device-form" className="form-stack" onSubmit={handleSubmit}>
+      <form
+        id="device-form"
+        className="form-stack"
+        onSubmit={handleSubmit}
+        onBlurCapture={() => {
+          setServerFieldErr({});
+          setClientFieldErr(computeClientFieldErrors());
+        }}
+      >
         {localErr ? <div className="error-banner">{localErr}</div> : null}
-        {error ? <div className="error-banner">{error}</div> : null}
+        {errorBanner ? <div className="error-banner">{errorBanner}</div> : null}
+        {fieldErr._root ? <div className="error-banner">{fieldErr._root}</div> : null}
         {editResourceId ? (
           <p className="muted" style={{ margin: 0 }}>
             <Link to={`/o/Device/${editResourceId}`}>View relationships (graph)</Link>
@@ -222,21 +317,50 @@ function DeviceFormInner({
         ) : null}
         <label>
           Name
-          <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
+          <input
+            className="input"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "name")}
+            autoComplete="off"
+          />
+          {fieldErr.name ? <span className="muted" style={{ color: "var(--danger)" }}>{fieldErr.name}</span> : null}
         </label>
         <label>
           Device type
-          <select className="input" value={deviceTypeId} onChange={(e) => setDeviceTypeId(e.target.value)}>
+          <select
+            className="input"
+            value={deviceTypeId}
+            onChange={(e) => {
+              setDeviceTypeId(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "deviceTypeId")}
+          >
             {deviceTypes.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.manufacturer.name} {t.model}
               </option>
             ))}
           </select>
+          {fieldErr.deviceTypeId ? (
+            <span className="muted" style={{ color: "var(--danger)" }}>{fieldErr.deviceTypeId}</span>
+          ) : null}
         </label>
         <label>
           Role
-          <select className="input" value={deviceRoleId} onChange={(e) => setDeviceRoleId(e.target.value)}>
+          <select
+            className="input"
+            value={deviceRoleId}
+            onChange={(e) => {
+              setDeviceRoleId(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "deviceRoleId")}
+          >
             {deviceRoles.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
@@ -246,7 +370,15 @@ function DeviceFormInner({
         </label>
         <label>
           Rack (optional)
-          <select className="input" value={rackId} onChange={(e) => setRackId(e.target.value)}>
+          <select
+            className="input"
+            value={rackId}
+            onChange={(e) => {
+              setRackId(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "rackId")}
+          >
             <option value="">— None —</option>
             {racks.map((r) => (
               <option key={r.id} value={r.id}>
@@ -254,22 +386,57 @@ function DeviceFormInner({
               </option>
             ))}
           </select>
+          {fieldErr.rackId ? <span className="muted" style={{ color: "var(--danger)" }}>{fieldErr.rackId}</span> : null}
         </label>
         <label>
           Serial number
-          <input className="input" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} />
+          <input
+            className="input"
+            value={serialNumber}
+            onChange={(e) => {
+              setSerialNumber(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "serialNumber")}
+          />
         </label>
         <label>
           Position (U)
-          <input className="input" value={positionU} onChange={(e) => setPositionU(e.target.value)} inputMode="numeric" />
+          <input
+            className="input"
+            value={positionU}
+            onChange={(e) => {
+              setPositionU(e.target.value);
+              setServerFieldErr({});
+            }}
+            inputMode="numeric"
+            style={inputStyleForField(fieldErr, "positionU")}
+          />
         </label>
         <label>
           Face
-          <input className="input" value={face} onChange={(e) => setFace(e.target.value)} placeholder="front / rear" />
+          <input
+            className="input"
+            value={face}
+            onChange={(e) => {
+              setFace(e.target.value);
+              setServerFieldErr({});
+            }}
+            placeholder="front / rear"
+            style={inputStyleForField(fieldErr, "face")}
+          />
         </label>
         <label>
           Status
-          <select className="input" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select
+            className="input"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setServerFieldErr({});
+            }}
+            style={inputStyleForField(fieldErr, "status")}
+          >
             {STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -289,6 +456,13 @@ function DeviceFormInner({
           </select>
         </label>
         <KeyValueEditor value={kv} onChange={setKv} />
+        {Object.entries(fieldErr)
+          .filter(([k]) => k.startsWith("customAttributes"))
+          .map(([k, msg]) => (
+            <p key={k} className="muted" style={{ color: "var(--danger)", margin: "0.25rem 0 0", fontSize: "0.82rem" }}>
+              {k}: {msg}
+            </p>
+          ))}
       </form>
     </FormPageShell>
   );

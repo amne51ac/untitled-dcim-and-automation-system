@@ -1,0 +1,115 @@
+{
+  "properties": {
+    "name": {
+      "description": "Display name (non-empty).",
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "slug": {
+      "description": "URL-style slug (non-empty).",
+      "minLength": 1,
+      "title": "Slug",
+      "type": "string"
+    },
+    "locationTypeId": {
+      "description": "Reference to a `LocationType` row (global catalog).",
+      "format": "uuid",
+      "title": "Locationtypeid",
+      "type": "string",
+      "x-referential": "location_type",
+      "x-validation-endpoint": "/v1/validation/location-type"
+    },
+    "parentId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Parent location in the org hierarchy, if any.",
+      "title": "Parentid",
+      "x-referential": "location",
+      "x-validation-endpoint": "/v1/validation/location"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "latitude": {
+      "anyOf": [
+        {
+          "maximum": 90,
+          "minimum": -90,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "WGS84; must be paired with longitude.",
+      "title": "Latitude"
+    },
+    "longitude": {
+      "anyOf": [
+        {
+          "maximum": 180,
+          "minimum": -180,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "WGS84; must be paired with latitude.",
+      "title": "Longitude"
+    },
+    "templateId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templateid"
+    },
+    "customAttributes": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Customattributes"
+    }
+  },
+  "required": [
+    "name",
+    "slug",
+    "locationTypeId"
+  ],
+  "title": "LocationCreate",
+  "type": "object"
+}

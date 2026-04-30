@@ -16,6 +16,7 @@ from nims.deps import get_auth, get_db, require_auth_ctx
 from nims.models_generated import ObjectTemplate
 from nims.serialize import columns_dict
 from nims.services.audit import record_audit
+from nims.services.template_custom_attributes import augment_template_item_with_validation_schema
 from nims.template_defaults import BASE_TEMPLATE_DEFINITIONS, SUPPORTED_RESOURCE_TYPES
 from nims.timeutil import utc_now
 
@@ -24,7 +25,7 @@ router = APIRouter(tags=["templates"])
 
 def _serialize_template(t: ObjectTemplate) -> dict[str, Any]:
     out = columns_dict(t)
-    return out
+    return augment_template_item_with_validation_schema(out)
 
 
 class TemplateCreate(BaseModel):

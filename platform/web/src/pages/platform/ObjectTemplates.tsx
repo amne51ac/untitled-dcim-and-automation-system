@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiJson } from "../../api/client";
 import { DataTable } from "../../components/DataTable";
@@ -9,6 +9,15 @@ import { RowOverflowMenu } from "../../components/RowOverflowMenu";
 import { objectViewHref } from "../../lib/objectLinks";
 import { notifyActionUnavailable } from "../../lib/rowActions";
 import { InlineLoader } from "../../components/Loader";
+import {
+  ObjectTemplateDefinitionPanel,
+  type ObjectTemplateDefinitionPanelHandle,
+} from "./ObjectTemplateDefinitionPanel";
+import {
+  getCustomFieldSpecs,
+  specToRow,
+  validateCustomFieldRows,
+} from "./objectTemplateCustomFieldsMerge";
 
 type TemplateItem = {
   id: string;
@@ -94,7 +103,7 @@ export function ObjectTemplatesPage() {
     <>
       <ModelListPageHeader
         title="Object templates"
-        subtitle="Click a row to view template details; use Edit for the form designer."
+        subtitle="Custom attributes: visual field builder plus optional full-definition JSON. Built-in fields stay read-only in the UI."
         extraActions={
           <>
             <select
@@ -195,6 +204,7 @@ export function ObjectTemplatesPage() {
       ) : null}
       {modal?.mode === "edit" ? (
         <TemplateEditModal
+          key={modal.item.id}
           item={modal.item}
           onClose={() => setModal(null)}
           onSubmit={(id, body) => patchMut.mutate({ id, body })}
@@ -252,17 +262,10 @@ function TemplateCreateModal({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [defJson, setDefJson] = useState(JSON.stringify(emptyDef, null, 2));
+  const [definition, setDefinition] = useState<Record<string, unknown>>(() => structuredClone(emptyDef) as Record<string, unknown>);
   const [isDefault, setIsDefault] = useState(false);
   const [localErr, setLocalErr] = useState<string | null>(null);
-
-  const defObj = useMemo(() => {
-    try {
-      return JSON.parse(defJson) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-  }, [defJson]);
+  const definitionPanelRef = useRef<ObjectTemplateDefinitionPanelHandle>(null);
 
   function submit() {
     setLocalErr(null);
@@ -274,8 +277,15 @@ function TemplateCreateModal({
       setLocalErr("Name and slug are required.");
       return;
     }
-    if (!defObj) {
-      setLocalErr("Definition must be valid JSON.");
+    const flushed = definitionPanelRef.current?.flushJson();
+    if (!flushed?.ok) {
+      setLocalErr(flushed?.error ?? "Could not apply definition.");
+      return;
+    }
+    const def = flushed.definition;
+    const customErr = validateCustomFieldRows(getCustomFieldSpecs(def).map(specToRow));
+    if (customErr) {
+      setLocalErr(customErr);
       return;
     }
     onSubmit({
@@ -283,7 +293,7 @@ function TemplateCreateModal({
       name: name.trim(),
       slug: slug.trim().toLowerCase(),
       description: description.trim() || null,
-      definition: defObj,
+      definition: def,
       isDefault,
     });
   }
@@ -331,14 +341,12 @@ function TemplateCreateModal({
           <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
           Set as default for this resource type
         </label>
-        <label>
-          Definition (JSON)
-          <textarea className="input" value={defJson} onChange={(e) => setDefJson(e.target.value)} spellCheck={false} />
-        </label>
-        <p className="muted" style={{ margin: 0, fontSize: "0.78rem" }}>
-          Add custom fields under <code className="mono">fields</code> with{" "}
-          <code className="mono">&#123; key, label, type, builtin: false &#125;</code> for extensions.
-        </p>
+        <ObjectTemplateDefinitionPanel
+          ref={definitionPanelRef}
+          definition={definition}
+          onDefinitionChange={setDefinition}
+          jsonTextareaRows={10}
+        />
       </div>
     </Modal>
   );
@@ -357,17 +365,12 @@ function TemplateEditModal({
 }) {
   const [name, setName] = useState(item.name);
   const [description, setDescription] = useState(item.description ?? "");
-  const [defJson, setDefJson] = useState(JSON.stringify(item.definition ?? emptyDef, null, 2));
+  const [definition, setDefinition] = useState<Record<string, unknown>>(
+    () => structuredClone(item.definition ?? emptyDef) as Record<string, unknown>,
+  );
   const [isDefault, setIsDefault] = useState(item.isDefault);
   const [localErr, setLocalErr] = useState<string | null>(null);
-
-  const defObj = useMemo(() => {
-    try {
-      return JSON.parse(defJson) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-  }, [defJson]);
+  const definitionPanelRef = useRef<ObjectTemplateDefinitionPanelHandle>(null);
 
   function submit() {
     setLocalErr(null);
@@ -375,14 +378,21 @@ function TemplateEditModal({
       setLocalErr("Name is required.");
       return;
     }
-    if (!defObj) {
-      setLocalErr("Definition must be valid JSON.");
+    const flushed = definitionPanelRef.current?.flushJson();
+    if (!flushed?.ok) {
+      setLocalErr(flushed?.error ?? "Could not apply definition.");
+      return;
+    }
+    const def = flushed.definition;
+    const customErr = validateCustomFieldRows(getCustomFieldSpecs(def).map(specToRow));
+    if (customErr) {
+      setLocalErr(customErr);
       return;
     }
     onSubmit(item.id, {
       name: name.trim(),
       description: description.trim() || null,
-      definition: defObj,
+      definition: def,
       isDefault,
     });
   }
@@ -425,10 +435,12 @@ function TemplateEditModal({
           <input type="checkbox" checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />
           Default for {item.resourceType}
         </label>
-        <label>
-          Definition (JSON)
-          <textarea className="input" value={defJson} onChange={(e) => setDefJson(e.target.value)} spellCheck={false} />
-        </label>
+        <ObjectTemplateDefinitionPanel
+          ref={definitionPanelRef}
+          definition={definition}
+          onDefinitionChange={setDefinition}
+          jsonTextareaRows={10}
+        />
       </div>
     </Modal>
   );

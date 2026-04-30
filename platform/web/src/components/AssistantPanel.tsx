@@ -58,7 +58,7 @@ function formatThreadTime(ts: number): string {
 }
 
 async function errorTextFromResponse(res: Response): Promise<string> {
-  let detail = res.statusText;
+  const detail = res.statusText;
   try {
     const errBody: unknown = await res.json();
     if (errBody && typeof errBody === "object") {

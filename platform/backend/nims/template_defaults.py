@@ -1,4 +1,11 @@
-"""Default object template definitions (builtin fields only; custom fields added via UI)."""
+"""Default object template definitions (builtin fields only; custom fields added via UI).
+
+Custom attribute columns are declared in the same ``fields`` array with ``builtin: false``.
+Optional keys: ``required``, ``type`` (string/number/integer/boolean/uuid/json/textarea),
+``minLength``, ``maxLength``, ``minimum``, ``maximum``, ``pattern``, ``enum`` / ``options``.
+Set ``strictCustomAttributes``: true on the definition root to forbid undeclared keys.
+See ``nims.services.template_custom_attributes``.
+"""
 
 from __future__ import annotations
 

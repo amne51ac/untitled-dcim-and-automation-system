@@ -1,0 +1,32 @@
+{
+  "properties": {
+    "interfaceAId": {
+      "format": "uuid",
+      "title": "Interfaceaid",
+      "type": "string"
+    },
+    "interfaceBId": {
+      "format": "uuid",
+      "title": "Interfacebid",
+      "type": "string"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Label"
+    }
+  },
+  "required": [
+    "interfaceAId",
+    "interfaceBId"
+  ],
+  "title": "CableCreate",
+  "type": "object"
+}

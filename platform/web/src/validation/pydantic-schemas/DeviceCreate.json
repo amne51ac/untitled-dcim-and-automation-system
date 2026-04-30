@@ -1,0 +1,137 @@
+{
+  "properties": {
+    "name": {
+      "description": "Display name (non-empty).",
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "deviceTypeId": {
+      "description": "`DeviceType` in the global catalog (manufacturer + model).",
+      "format": "uuid",
+      "title": "Devicetypeid",
+      "type": "string",
+      "x-referential": "device_type",
+      "x-validation-endpoint": "/v1/validation/device-type"
+    },
+    "deviceRoleId": {
+      "description": "`DeviceRole` in the global catalog.",
+      "format": "uuid",
+      "title": "Deviceroleid",
+      "type": "string",
+      "x-referential": "device_role",
+      "x-validation-endpoint": "/v1/validation/device-role"
+    },
+    "rackId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional org-scoped rack placement.",
+      "title": "Rackid",
+      "x-referential": "rack",
+      "x-validation-endpoint": "/v1/validation/rack"
+    },
+    "serialNumber": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Serialnumber"
+    },
+    "positionU": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Rack unit position, when racked.",
+      "title": "Positionu"
+    },
+    "face": {
+      "anyOf": [
+        {
+          "enum": [
+            "front",
+            "rear"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Mount face when racked.",
+      "title": "Face"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "enum": [
+            "PLANNED",
+            "STAGED",
+            "ACTIVE",
+            "DECOMMISSIONED"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Lifecycle status; server defaults to PLANNED if omitted on create.",
+      "title": "Status"
+    },
+    "templateId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templateid"
+    },
+    "customAttributes": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Customattributes"
+    }
+  },
+  "required": [
+    "name",
+    "deviceTypeId",
+    "deviceRoleId"
+  ],
+  "title": "DeviceCreate",
+  "type": "object"
+}

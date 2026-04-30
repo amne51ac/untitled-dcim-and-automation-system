@@ -29,6 +29,7 @@ from nims.routers.v1.search import router as search_router
 from nims.routers.v1.templates import router as templates_router
 from nims.routers.v1.ui import router as ui_router
 from nims.routers.v1.users_admin import router as users_admin_router
+from nims.routers.v1.validation import router as validation_router
 from nims.swagger_html import SWAGGER_DOCS_HTML
 
 MCP_SESSION_MANAGER = None
@@ -96,6 +97,7 @@ app.include_router(connectors_router, prefix="/v1")
 app.include_router(copilot_router, prefix="/v1")
 app.include_router(internal_llm_router, prefix="/v1")
 app.include_router(extensions_admin_router, prefix="/v1")
+app.include_router(validation_router, prefix="/v1")
 
 app.include_router(graphql_router, prefix="/graphql")
 

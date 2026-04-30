@@ -1,0 +1,64 @@
+{
+  "properties": {
+    "name": {
+      "description": "Display name (non-empty).",
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "locationId": {
+      "description": "Rack is placed in this org-scoped location.",
+      "format": "uuid",
+      "title": "Locationid",
+      "type": "string",
+      "x-referential": "location",
+      "x-validation-endpoint": "/v1/validation/location"
+    },
+    "uHeight": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Rack height in U; defaults to 42 on the server if omitted.",
+      "title": "Uheight"
+    },
+    "templateId": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Templateid"
+    },
+    "customAttributes": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Customattributes"
+    }
+  },
+  "required": [
+    "name",
+    "locationId"
+  ],
+  "title": "RackCreate",
+  "type": "object"
+}

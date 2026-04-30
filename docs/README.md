@@ -17,7 +17,7 @@ Key entry points:
 | `getting-started.html` | Local runbook (Postgres, API, optional **job worker**, env) |
 | `deployment.html` / `deployment.md` | **OpenAPI** (`/docs/json`), Docker/K8s **deploy** examples, checklist |
 | `environment-variables.md` | **Full** list of `AUTH_*`, `LLM_*`, `CONNECTOR_*`, `PG*`, seeds, etc. |
-| `api.html` | REST/OpenAPI, authentication surfaces, v1 touchpoints |
+| `api.html` | REST/OpenAPI, authentication surfaces, v1 touchpoints; **embedded Swagger UI** from `assets/openapi.json` (regenerate via `export_contracts`) |
 | `architecture.md` / `architecture.html` | Target architecture (diagrams) |
 | `design-auth-user-management.md` | **Sign-in & identity**: local email/password, **LDAP** / **Entra** / **OIDC** (at most one external), `AUTH_*` env vs DB, admin API, `GET /v1/auth/providers` |
 | `design-api-token-authentication.md` | Bearer token authentication for automation |

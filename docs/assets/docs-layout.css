@@ -4,6 +4,20 @@
   background: var(--bg);
 }
 
+/* Swagger UI embed (docs/api.html) */
+.swagger-ui-wrap {
+  margin: 1.25rem 0 2rem;
+  min-height: 520px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.swagger-ui-wrap .swagger-ui {
+  font-family: Inter, system-ui, sans-serif;
+}
+
 .docs-shell {
   display: flex;
   align-items: flex-start;

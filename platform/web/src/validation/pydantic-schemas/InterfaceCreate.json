@@ -1,0 +1,44 @@
+{
+  "properties": {
+    "name": {
+      "description": "Display name (non-empty).",
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "type": {
+      "default": "ethernet",
+      "title": "Type",
+      "type": "string"
+    },
+    "macAddress": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Macaddress"
+    },
+    "mtu": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mtu"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "InterfaceCreate",
+  "type": "object"
+}

@@ -9,6 +9,7 @@ from sqlalchemy import and_, delete, select
 from sqlalchemy.orm import Session
 
 from nims.models_generated import ResourceExtension
+from nims.services.template_custom_attributes import validate_custom_attributes_for_storage
 from nims.timeutil import utc_now
 
 
@@ -77,6 +78,13 @@ def upsert_extension(
         ),
     ).scalar_one_or_none()
     payload = dict(data or {})
+    validate_custom_attributes_for_storage(
+        db,
+        organization_id,
+        resource_type,
+        template_id,
+        payload,
+    )
     if existing is None:
         db.add(
             ResourceExtension(
