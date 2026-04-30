@@ -53,6 +53,19 @@
       <li>Seed: <code class="mono">make seed</code> or <code class="mono">npm run db:seed</code> (runs <code class="mono">nims-seed</code> via uv).</li>
     </ol>
 
+    <h2>Sign-in &amp; environment (optional)</h2>
+    <p>
+      Beyond <code class="mono">JWT_SECRET</code> and <code class="mono">DATABASE_URL</code>, you can set
+      <code class="mono">AUTH_LOCAL_ENABLED</code>, <code class="mono">AUTH_EXTERNAL_PROVIDER</code>, and directory-specific
+      <code class="mono">AUTH_LDAP_*</code>, <code class="mono">AUTH_AZURE_*</code>, or <code class="mono">AUTH_OIDC_*</code> to match your IdP.
+      Alternatively, use the <strong>Sign-in &amp; identity</strong> screen after seeding an admin user. See
+      <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-auth-user-management.md" rel="noopener noreferrer" target="_blank"
+        ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+        <span>design-auth-user-management.md</span></a
+      >
+      and <code class="mono">platform/.env.example</code>.
+    </p>
+
     <h2>Run the API</h2>
     <p>From <code class="mono">platform/</code>:</p>
     <pre><code>make sync          # uv sync in backend
@@ -76,6 +89,17 @@ make api           # or: uv run --directory backend nims-api</code></pre>
     <p>
       <strong>Note:</strong> <code class="mono">npm run dev</code> from <code class="mono">platform/</code> starts the <strong>Python API</strong>, not Vite—use
       <code class="mono">web:dev</code> for the React dev server.
+    </p>
+
+    <h2>Background job worker (optional)</h2>
+    <p>
+      For long-running jobs and connector sync off the request path, set <code class="mono">JOB_EXECUTION_MODE=async</code> in
+      <code class="mono">.env</code> and run a second process (same database):
+    </p>
+    <pre><code>uv run --directory backend nims-worker</code></pre>
+    <p>
+      See <code class="mono">JOB_WORKER_POLL_INTERVAL_SEC</code> and <code class="mono">JOB_WORKER_BATCH_SIZE</code> in
+      <code class="mono">.env.example</code>. The default is inline execution in the API process.
     </p>
 
     <h2>CI parity</h2>

@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from nims.auth_context import AuthContext
 from nims.deps import get_auth, get_db, require_auth_ctx
-from nims.models_generated import Apitokenrole, PluginPlacement, User
+from nims.models_generated import Apitokenrole, PluginPlacement, PluginRegistration, User
 
 router = APIRouter(tags=["ui"])
 
@@ -137,3 +137,136 @@ def list_placements(
             }
         )
     return {"items": items}
+
+
+# Built-in admin nav (web shell may merge with GET /v1/ui/navigation).
+_CORE_ADMIN_NAV: list[dict[str, Any]] = [
+    {
+        "id": "admin.tokens",
+        "label": "API tokens",
+        "href": "/platform/admin/tokens",
+        "order": 10,
+        "source": "core",
+    },
+    {
+        "id": "admin.identity",
+        "label": "Sign-in & identity",
+        "href": "/platform/admin/identity",
+        "order": 20,
+        "source": "core",
+    },
+    {
+        "id": "admin.users",
+        "label": "User management",
+        "href": "/platform/admin/users",
+        "order": 30,
+        "source": "core",
+    },
+    {
+        "id": "admin.audit",
+        "label": "Audit log",
+        "href": "/platform/admin/audit",
+        "order": 40,
+        "source": "core",
+    },
+    {
+        "id": "admin.docs",
+        "label": "Docs & API",
+        "href": "/platform/admin/docs",
+        "order": 50,
+        "source": "core",
+    },
+    {
+        "id": "admin.health",
+        "label": "Service health",
+        "href": "/platform/admin/health",
+        "order": 60,
+        "source": "core",
+    },
+    {
+        "id": "admin.extensions",
+        "label": "Plugins & extensions",
+        "href": "/platform/admin/extensions",
+        "order": 70,
+        "source": "core",
+    },
+]
+
+
+def _nav_from_plugin_manifest(
+    reg: PluginRegistration,
+) -> list[dict[str, Any]]:
+    m = reg.manifest
+    if not m or not isinstance(m, dict):
+        return []
+    nav = m.get("navigation")
+    if not nav or not isinstance(nav, list):
+        return []
+    out: list[dict[str, Any]] = []
+    for i, entry in enumerate(nav):
+        if not isinstance(entry, dict):
+            continue
+        label = entry.get("label")
+        href = entry.get("href")
+        if not isinstance(label, str) or not isinstance(href, str) or not label.strip() or not href.strip():
+            continue
+        h = href.strip()
+        if not h.startswith("/"):
+            continue
+        order = entry.get("order", 100 + i)
+        try:
+            o = int(order)
+        except (TypeError, ValueError):
+            o = 100 + i
+        out.append(
+            {
+                "id": f"plugin.{reg.packageName}.{i}",
+                "label": label.strip(),
+                "href": h,
+                "order": o,
+                "source": "plugin",
+                "packageName": reg.packageName,
+            }
+        )
+    return out
+
+
+@router.get("/ui/navigation")
+def get_merged_navigation(
+    db: Session = Depends(get_db),
+    auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
+) -> dict[str, Any]:
+    """Merges core admin links with per-org `PluginRegistration.manifest.navigation` (same-origin only)."""
+    ctx = require_auth_ctx(auth)
+    items: list[dict[str, Any]] = [dict(x) for x in _CORE_ADMIN_NAV]
+    rows = (
+        db.execute(
+            select(PluginRegistration)
+            .where(PluginRegistration.organizationId == ctx.organization.id)
+            .where(PluginRegistration.enabled.is_(True))  # noqa: E712
+        )
+    ).scalars()
+    for reg in rows:
+        for x in _nav_from_plugin_manifest(reg):
+            items.append(x)
+    items.sort(key=lambda x: (int(x.get("order", 0)), str(x.get("id", ""))))
+    return {
+        "version": 1,
+        "context": "admin",
+        "items": items,
+    }
+
+
+@router.get("/ui/federation")
+def get_federation_manifest(
+    auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
+) -> dict[str, Any]:
+    """No remote module federation in this build; shell loads only bundled widget keys. Reserved for a future shape."""
+    require_auth_ctx(auth)
+    return {
+        "version": 1,
+        "mode": "builtin",
+        "remoteEntryUrls": [],
+        "widgets": [],
+        "notes": "Federated/iframe widgets and signing are not enabled; use /v1/ui/placements and built-in keys.",
+    }

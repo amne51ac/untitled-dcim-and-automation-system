@@ -22,7 +22,7 @@ Non-destructive creates/updates may follow the same preview pattern for consiste
 
 ## 1. Summary
 
-This document specifies an **LLM-assisted layer** on IntentCenter: grounded answers, draft change bundles, and import/reconciliation help—without making the model a second source of truth. The assistant **reads** inventory and policy through existing APIs (and future tool endpoints), **proposes** structured actions, and **applies changes** only through the same paths as human operators—with **audit**, **RBAC**, and—for **any destructive operation**—a **mandatory preview and explicit user permission** (§0) before execution.
+This document specifies an **LLM-assisted layer** on IntentCenter: grounded answers, draft change bundles, and import/reconciliation help—without making the model a second source of truth. The assistant **reads** inventory and policy through existing APIs (and future tool endpoints), **proposes** structured actions, and **applies changes** only through the same paths as human operators—with **audit**, **RBAC**, and—for **any destructive operation**—a **mandatory preview and explicit user permission** (§0) before execution. The **chat UI** (§10) supports **page-aware suggested next steps** and **reusable org skills** (saved prompt templates), not only ad hoc messages.
 
 ---
 
@@ -209,7 +209,7 @@ Future tools (as APIs exist or are added):
 
 ## 9. Observability
 
-- Metrics: request latency, tokens in/out, tool error rate, rate-limit hits, user satisfaction feedback (optional thumbs).
+- Metrics: request latency, tokens in/out, tool error rate, rate-limit hits, user satisfaction feedback (optional thumbs). **Skill** usage: skill id, org, user, context key (for adoption metrics; **not** for cross-user PII in logs without policy).
 - Tracing: one trace span per copilot request; child spans per tool call (align with product tracing strategy).
 - Errors: surface user-safe messages; log provider errors server-side (no raw secrets).
 
@@ -217,13 +217,53 @@ Future tools (as APIs exist or are added):
 
 ## 10. UX surfaces (web)
 
-Suggested placement (implementation detail can vary):
+**Placement (shell):** a **global assistant** entry (sidebar, header, or command palette)—always available. When the user opens it from an object or list view, the client passes **current page context** (route, `resourceType`, `id`, and other safe metadata) to the copilot so the server can inject the same **tool** and **RAG** context as in §5.1 / §17.
 
-1. **Global assistant** entry in shell (sidebar or header)—always available; prefers **current page context** when open from an object view.
-2. **Contextual actions** on list/detail pages: “Explain links,” “Draft update from description,” “Map import columns.”
-3. **Change preview (mandatory for destructive work):** a dedicated panel or modal showing **what will happen** (object list, operation per row, before/after or field deltas, import row counts and modes). **Primary action** is **Review**; **Apply** / **Run import** is secondary and only enabled after the user has seen the preview (no one-click destructive apply from chat).
-4. **Explicit permission:** checkbox or typed confirmation for **high-impact** classes (configurable), e.g. “Type DELETE to confirm” or “I understand N objects will be archived.”
-5. **Post-apply:** link to audit trail / object history; clear success or partial-failure summary.
+### 10.1 Chat interface layout and behavior
+
+| Element | Behavior |
+|--------|----------|
+| **Container** | Prefer a **persistent side panel** (right rail) or **drawer** that does not unload the main app; alternative is a full-height overlay. The main inventory view remains visible so users can **verify** facts and links the model cites. |
+| **Threads** | **Conversation list** (optional collapse): new chat, **rename**, **delete**; each thread stores message history per user according to org **retention** policy (§8). |
+| **Context header** | Compact strip: e.g. “**Device** · *Core-Switch-01*” or “**List** · Sites” so it is obvious **what the model was told** about the page. When the user navigates, the client may **append** a system or user-visible line (“Context updated to…”) or prompt to **continue with new context**—product choice, but the effective context must be **consistent** and logged server-side. |
+| **Message stream** | Assistant turns **stream**; user can **stop** generation. Support **copy**, optional **regenerate** last answer. User messages are plain text; **markdown** in assistant output where safe. |
+| **Composer** | Multiline input, **Send**; optional **attach** (future: paste ticket text per §5.4). **Submit** is disabled while streaming unless “stop” is used first. |
+| **Proposals and preview** | When the orchestrator returns a **change proposal** (§5.2) or import draft (§5.3), the panel surfaces a **Open preview** / **Review change** action that **never** auto-applies; **§0** still applies. |
+
+**Accessibility:** focus management when opening the panel, keyboard focus trap where appropriate, sufficient contrast for code and citations.
+
+### 10.2 Recommended next steps (page-aware)
+
+**Goal:** When the user **opens** the chat (or focuses the composer), show a short list of **suggested actions** that depend on **where** they are—so the empty state is useful, not blank.
+
+| Input | The client sends a compact **context key** to the server (or resolves locally with cached org data): e.g. `route`, `resourceType`, `id` (if any), and **screen kind** (detail / list / admin / import wizard). |
+| Suggestions source | **(1) Curated** “recipes” shipped with the product per screen kind (e.g. on a device detail: “Summarize dependencies,” “What would break if this is down?”). **(2) Public org skills** (§10.3) whose **applicability** (tags or `resourceType` filter) matches the current context, ranked by recency/use. **(3) Optional** light ranking with the LLM: server sends **only** metadata (titles + descriptions), not full inventory, to order chips—if disabled, use deterministic order. |
+| Presentation | **Chips** or **short buttons** above the composer: one tap **prefills** the composer (editable before send) or **starts** a run with a visible first message. **RBAC:** hide suggestions that imply a tool or mutation the current user **cannot** perform. |
+| Privacy | Suggestions are **org-visible** in intent only; do not show other users’ private skill **titles** in global suggestions unless the skill is **org-public** (see §10.3). |
+
+**Empty state (no match):** show 2–3 generic, safe starter prompts in English (§16) and a link to **Browse org skills**.
+
+### 10.3 Copilot skills (saved queries / reusable prompts)
+
+**Terminology:** A **Copilot skill** (product name TBD) is a **reusable template**: metadata plus a **user message** (and optional **system instructions** scoped to the org) that the orchestrator may prepend or merge. Skills are **not** executable code; they do not bypass **RBAC**, **tools**, or **§0**—they only **seed** a conversation. *(Not related to the editor’s “Agent skills” for AI tooling.)*
+
+| Concern | Design |
+|--------|--------|
+| **Create** | **Save from chat:** after any exchange, “**Save as skill**” pre-fills an editor with the last **user** message (or a selected message). **Create from scratch** in **Settings → Copilot → Skills** (or Admin). |
+| **Template variables** | Support placeholders that the client **resolves** before send, e.g. `{{resourceType}}`, `{{id}}`, `{{displayName}}` from current **page context**; if a variable is missing, prompt the user or show an inline error. The server should **re-resolve** and validate on submit to prevent stale IDs. |
+| **Edit** | Author always edits **own** private skills. **Org-public** skills: only **author** and users with a suitable role (**org admin** or `copilot_skill_admin` TBD) can **edit in place**; other users can **Duplicate / fork** to a **private** copy they own. All edits are **versioned** or at minimum show **updated at** and **author** in the directory. |
+| **Visibility** | **Private** (default): visible only to owner. **Organization:** listed in the org **skill library**; **discover** via search, tags, applicable `resourceType`, “featured” (optional). Only users who opt in to “make public” (or with admin rights) can flip visibility; confirm dialog explains org-wide readability of **title and description**. |
+| **Share and reuse** | Org members with access see **public** skills in the **picker** in chat and in suggested next steps (§10.2). **No** cross-org sharing in v1. **Usage** may be logged (who ran which skill) for **audit** and for ranking suggestions. |
+| **Safety** | Skill text is **user- or admin-authored**; treat as **untrusted** for prompt-injection in the same way as inventory (§8). On save, run **light validation** (length, disallowed patterns if any) and keep **one** canonical storage path. Destructive outcomes still require **preview + consent** (§0). |
+
+**API sketch:** `GET/POST/PATCH/DELETE` skills under e.g. `/v1/copilot/skills` with `visibility`, `applicableResourceTypes`, `title`, `body`, `description`; `GET /v1/copilot/suggestions?context=…` for §10.2. Exact paths TBD with routing.
+
+### 10.4 Contextual entry points and destructive flows (non-chat)
+
+1. **Contextual actions** on list/detail pages (same ideas as before): “Explain links,” “Draft update from description,” “Map import columns”—these can **open** the chat with a pre-filled first message or a **preselected skill** id.
+2. **Change preview (mandatory for destructive work):** a **dedicated** panel or modal (may be **outside** the chat width) showing **what will happen** (object list, field deltas, import row counts and modes). **Primary action** is **Review**; **Apply** is secondary and only after explicit confirmation (no one-click destructive apply from chat).
+3. **Explicit permission:** high-impact **typed** or checkbox confirmation where configured.
+4. **Post-apply:** link to audit trail / object history; success or partial-failure summary in chat and/or on the main view.
 
 **Empty and error states:** offline provider, rate limit, or permission denial must be clear and actionable. If the user closes the preview without applying, **no** destructive call occurs.
 
@@ -237,6 +277,7 @@ Suggested placement (implementation detail can vary):
 | **P1** | Change **proposals** + **mandatory preview + consent** for destructive ops; execute via existing REST with full RBAC + apply token | Users can complete a destructive workflow only via preview → confirm; integration tests prove no apply without token. |
 | **P2** | Bulk import mapping assistant + **same preview/consent** for destructive imports | Destructive imports cannot run without preview panel + confirmation. |
 | **P3** | Ticket paste + correlation; optional policy/risk narration | Agreed triage workflow adopted by one team. |
+| **P3b** (or parallel) | **§10.2** page-aware **suggested next steps**; **§10.3** skills (create, org library, private vs org, fork) | Users can save and reuse skills; public skills appear for others; suggestions respect RBAC. |
 
 ---
 
@@ -246,6 +287,7 @@ Suggested placement (implementation detail can vary):
 - **Proposal acceptance rate:** % of LLM-drafted bundles executed without major edit.
 - **Import mapping:** edits required before successful bulk import (median).
 - **Safety:** zero **unauthorized** or **un-previewed destructive** mutations attributable to copilot (must remain zero by design: consent gate + tests); incidents reviewed within SLA.
+- **Skills (when shipped):** repeat use of org-public skills vs one-off queries; time to first successful run from a suggestion chip.
 
 ---
 
@@ -258,6 +300,7 @@ Suggested placement (implementation detail can vary):
 | User misled into approving a harmful change | Preview shows **server-built** canonical payload (hash-bound consent token), not model-authored “trust me” text; optional typed confirm for high-impact operations (§10). |
 | Cost spikes | Per-user, org, and global budgets; **RAG/embedding** costs in **§17**; summarization of large graphs before model. |
 | Regulatory pushback on cloud LLM | Private deployment option; data processing agreement; clear data flow doc. |
+| **Malicious or misleading org-shared skills** | Treat skill body as untrusted like inventory (§8); author + **org admin** edit; others **fork**; org policy may disable public skills; preview + consent (§0) unchanged. |
 
 ---
 
@@ -395,10 +438,26 @@ Per **§14** and **§16**: settings are **per organization**, with the same **en
 
 ---
 
-## 18. Document history
+## 18. Extensibility, jobs, and remaining product choices
+
+| Area | Status |
+|------|--------|
+| **Async jobs** | `JOB_EXECUTION_MODE=async` queues `JobRun` as `PENDING`; run **`nims-worker`** (same `DATABASE_URL`) to execute and update status. |
+| **Connector hardening** | Outbound URLs pass **SSRF-style checks** (block private/loopback/link-local; optional **host suffix allowlist**; **redirects off** by default). **Fernet** at rest when `CONNECTOR_SECRETS_FERNET_KEY` is set; `CONNECTOR_SECRETS_KMS_KEY_ID` is reserved for a future cloud KMS. |
+| **Plugin install** | `POST /v1/plugins/install` is **501** until signing, trust roots, and an artifact store exist. |
+| **Federated UI** | `GET /v1/ui/federation` returns **`mode: "builtin"`**; slots use bundled widget keys only. |
+| **Macros** | `{{ path \| default("…") }}` on `page` / `resource` / `user` / `organization`. **`api.*` is blocked**; approved `api` reads are a future, explicit allowlist. |
+| **Admin navigation** | `GET /v1/ui/navigation` merges core links with `PluginRegistration.manifest.navigation` (same-origin `href` only). |
+
+**Still open (product / architecture, not single-tenant FOSS v1):** multi-region artifact distribution, **GraphQL** (or BFF) for read-heavy remote widgets, **marketplace vs org-private** signing, and full **KMS**-backed secret material instead of env Fernet.
+
+---
+
+## 19. Document history
 
 | Date | Change |
 |------|--------|
 | 2026-04-20 | Initial draft |
 | 2026-04-20 | Mandatory preview + explicit permission for destructive operations; consent gate, §5.5 classification, tooling/UX/architecture updates |
-| 2026-04-29 | Admin LLM (per-org, env lock, providers), extension + schema tools, **§16** decisions, **§17** embeddings/RAG (admin, pipeline, storage, query, metrics). Updates to **§3/§5.1/§13/§14/§15.3**. |
+| 2026-04-29 | **§1/§9/§10/§11/§13/§16/§17** as built out: per-org LLM, RAG, **chat UI** (side panel, threads, context header), **recommended next steps**, **org Copilot skills** (save, edit, share, fork), admin + env patterns, extension/schema tools, metrics and risks. |
+| 2026-04-29 | **§18** extensibility: async worker, connector policy + optional Fernet, UI navigation + federation manifest, macro filters, plugin install 501, documented remaining product choices. |

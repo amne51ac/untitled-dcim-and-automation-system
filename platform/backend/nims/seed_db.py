@@ -708,6 +708,13 @@ def run_seed(session: Session) -> tuple[Organization, str, str, str, str]:
                 enabled=True,
                 manifest={
                     "version": 1,
+                    "navigation": [
+                        {
+                            "label": "Example plugin link (seed)",
+                            "href": "/platform/inventory",
+                            "order": 5,
+                        },
+                    ],
                     "widgets": [
                         "inventory-summary",
                         {"key": "builtin.objectContext", "pageId": "inventory.objectView", "slot": "content.aside"},
@@ -721,6 +728,13 @@ def run_seed(session: Session) -> tuple[Organization, str, str, str, str]:
         plug.enabled = True
         plug.manifest = {
             "version": 1,
+            "navigation": [
+                {
+                    "label": "Example plugin link (seed)",
+                    "href": "/platform/inventory",
+                    "order": 5,
+                },
+            ],
             "widgets": [
                 "inventory-summary",
                 {"key": "builtin.objectContext", "pageId": "inventory.objectView", "slot": "content.aside"},

@@ -12,10 +12,14 @@ Key entry points:
 |------|------|
 | `index.html` | Product landing + **in-app screenshots**; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
 | `documentation.html` | Doc hub and links to repo sources |
+| `platform.html` | Web console + REST summary (inventory, extensibility, auth touchpoints) |
+| `getting-started.html` | Local runbook (Postgres, API, optional **job worker**, env) |
+| `api.html` | REST/OpenAPI, authentication surfaces, v1 touchpoints |
 | `architecture.md` / `architecture.html` | Target architecture (diagrams) |
-| `design-auth-user-management.md` | Auth, users, API tokens, and **sign-in & identity** (local + LDAP / Entra / OIDC, env vs DB, admin API) |
+| `design-auth-user-management.md` | **Sign-in & identity**: local email/password, **LDAP** / **Entra** / **OIDC** (at most one external), `AUTH_*` env vs DB, admin API, `GET /v1/auth/providers` |
 | `design-api-token-authentication.md` | Bearer token authentication for automation |
-| `design-llm-assistant.md` / `llm-assistant.html` | LLM copilot design |
+| `design-llm-assistant.md` | LLM copilot design; **§18** — extensibility, async jobs, connectors, UI navigation, federation (builtin) |
+| `design-extensibility-plugins-widgets.md` | Widget slots, placements, registry (Phase 0–1) |
 | `assets/site.css`, `assets/github-mark.svg`, `assets/intentcenter-logo.svg`, `assets/favicon.svg` | Shared styles, GitHub mark for links, and marks |
 | `assets/screenshots/*.png` | Product UI reference imagery for the static site |
 | `.nojekyll` | Disables Jekyll so static assets deploy cleanly |

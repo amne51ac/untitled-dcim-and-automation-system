@@ -43,8 +43,18 @@
 
       <h2 id="auth">Authentication</h2>
       <p>
-        Interactive users sign in via the web UI; automation uses <strong>Bearer tokens</strong> (seeded API tokens or
-        issued tokens). Send:
+        <strong>Browser sessions</strong> — after sign-in, the API uses an HTTP-only cookie (<code>nims_session</code>).
+        Sign-in methods are configured per organization: <strong>local email/password</strong> (optional) and
+        <strong>at most one</strong> of <strong>LDAP / Active Directory</strong>, <strong>Microsoft Entra ID</strong>, or
+        <strong>OpenID Connect</strong>, via <code>GET/PATCH /v1/admin/identity</code> and <code>AUTH_*</code> environment
+        variables. The login page calls <code>GET /v1/auth/providers</code> for the effective catalog. See
+        <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-auth-user-management.md" rel="noopener noreferrer" target="_blank"
+          ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+          <span>design-auth-user-management.md</span></a
+        >.
+      </p>
+      <p>
+        <strong>Automation &amp; scripting</strong> use <strong>Bearer tokens</strong> (seeded or issued API tokens). Send:
       </p>
       <pre><code>Authorization: Bearer &lt;token&gt;</code></pre>
       <p>Example:</p>
@@ -95,6 +105,10 @@
         <tbody>
           <tr><td>Global search</td><td><code>GET /v1/search?q=&amp;limit=</code></td></tr>
           <tr><td>Current user / prefs</td><td><code>GET /v1/me</code>, <code>PATCH /v1/me</code></td></tr>
+          <tr><td>Sign-in provider catalog</td><td><code>GET /v1/auth/providers</code></td></tr>
+          <tr><td>Identity (admin)</td><td><code>GET /v1/admin/identity</code>, <code>PATCH /v1/admin/identity</code></td></tr>
+          <tr><td>UI: page registry / slots / nav / federation</td><td><code>GET /v1/ui/page-registry</code>, <code>…/placements</code>, <code>…/navigation</code>, <code>…/federation</code></td></tr>
+          <tr><td>Plugins, connectors, jobs</td><td><code>GET /v1/plugins</code>, <code>/v1/connectors</code> (admin writes), <code>/v1/jobs</code>, <code>POST /v1/jobs/{key}/run</code></td></tr>
           <tr><td>Object view (fields + graph)</td><td><code>GET /v1/resource-view/{resourceType}/{id}</code></td></tr>
           <tr><td>Relationship graph JSON</td><td><code>GET /v1/resource-graph/{resourceType}/{id}</code></td></tr>
           <tr><td>Bulk export</td><td><code>GET /v1/bulk/{resourceType}/export</code></td></tr>

@@ -302,6 +302,23 @@ def get_plugins(
     return {"items": [serialize_plugin(p) for p in items]}
 
 
+@router.post("/plugins/install")
+def post_plugin_install(
+    db: Session = Depends(get_db),
+    auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
+) -> None:
+    """Reserved for a signed install pipeline, artifact store, and verification; not available yet."""
+    _ = db
+    _ = require_admin(require_auth_ctx(auth))
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=(
+            "Not implemented. Register packages via database/seed; future versions may accept signed bundles "
+            "and verify against a configured trust root."
+        ),
+    )
+
+
 class ResourceExtensionPut(BaseModel):
     templateId: uuid.UUID | None = None
     customAttributes: dict[str, Any] | None = None

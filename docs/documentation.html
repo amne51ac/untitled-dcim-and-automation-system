@@ -42,8 +42,9 @@
         <div class="docs-toc-title">Start here</div>
         <ul>
           <li><a href="https://demo.intentcenter.io" rel="noopener noreferrer" target="_blank">Live demo (hosted app)</a> — try the operator console in the browser</li>
-          <li><a href="getting-started.html">Getting started</a> — run Postgres, API, and console locally</li>
-          <li><a href="api.html">REST &amp; OpenAPI</a> — auth, versioned surfaces, UI touchpoints</li>
+          <li><a href="getting-started.html">Getting started</a> — run Postgres, API, optional <strong>job worker</strong>, and console locally</li>
+          <li><a href="api.html">REST &amp; OpenAPI</a> — auth (session, bearer tokens, sign-in options), v1 touchpoints</li>
+          <li><a href="platform.html">Web UI &amp; platform</a> — inventory, <strong>extensibility</strong> (placements, connectors, navigation), <strong>sign-in</strong> summary</li>
           <li><a href="data-model.html">Data model</a> — Prisma object types and anchors</li>
           <li><a href="architecture.html">Architecture</a> — context, containers, sequences (Mermaid)</li>
         </ul>
@@ -80,7 +81,15 @@
         </a>
         <a class="doc-card" href="platform.html">
           <h3>Web UI &amp; platform</h3>
-          <p>Stack summary, REST touchpoints for the SPA, bulk import/export, and object graph endpoints.</p>
+          <p>Stack summary, sign-in/identity, UI extensibility (registry, slots, nav), connectors, jobs, and REST touchpoints.</p>
+        </a>
+        <a class="doc-card" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-auth-user-management.md" rel="noopener noreferrer" target="_blank">
+          <h3>Auth &amp; user management (GitHub) ↗</h3>
+          <p>Local login, LDAP, Entra, OIDC, <code>AUTH_*</code> env, admin identity API, and public provider catalog.</p>
+        </a>
+        <a class="doc-card" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-llm-assistant.md" rel="noopener noreferrer" target="_blank">
+          <h3>LLM + extensibility (GitHub) ↗</h3>
+          <p>Copilot design, §18 — async worker, connector policy, federation (builtin), macros, remaining product choices.</p>
         </a>
       </div>
 
@@ -94,6 +103,14 @@
         <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/platform/README.md" rel="noopener noreferrer" target="_blank"
           ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
           <span>platform/README.md</span></a
+        >,
+        <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-auth-user-management.md" rel="noopener noreferrer" target="_blank"
+          ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+          <span>design-auth-user-management.md</span></a
+        >,
+        <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-extensibility-plugins-widgets.md" rel="noopener noreferrer" target="_blank"
+          ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+          <span>design-extensibility-plugins-widgets.md</span></a
         >.
       </p>
 

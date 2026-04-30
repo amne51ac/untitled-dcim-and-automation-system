@@ -1,4 +1,4 @@
-"""Synchronous job execution (API process). Replace with a real worker queue when scaling out."""
+"""Job handlers: noop, connector.sync. Outbound HTTP is constrained by ``connector_url_policy``."""
 
 from __future__ import annotations
 
@@ -9,7 +9,10 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from nims.config import get_settings
 from nims.models_generated import ConnectorRegistration, JobDefinition, JobRun
+from nims.services.connector_credential_store import unpack_credentials
+from nims.services.connector_url_policy import assert_connector_url_allowed
 from nims.timeutil import utc_now
 
 
@@ -34,11 +37,24 @@ def execute_job(
     )
 
 
+def _auth_headers_from_credentials(creds: dict[str, Any] | None) -> dict[str, str]:
+    if not creds:
+        return {}
+    auth = creds.get("authorization")
+    if isinstance(auth, str) and auth.strip():
+        return {"Authorization": auth.strip()}
+    token = creds.get("bearerToken")
+    if isinstance(token, str) and token.strip():
+        return {"Authorization": f"Bearer {token.strip()}"}
+    return {}
+
+
 def _run_connector_sync(
     db: Session,
     organization_id: uuid.UUID,
     run: JobRun,
 ) -> tuple[dict[str, Any], str]:
+    settings = get_settings()
     inp: dict[str, Any] = run.input if isinstance(run.input, dict) else {}
     cid = inp.get("connectorId")
     if not cid:
@@ -62,24 +78,34 @@ def _run_connector_sync(
         return ({"ok": False, "error": "connector disabled"}, "Connector disabled")
 
     t = (row.type or "").lower()
-    settings = row.settings if isinstance(row.settings, dict) else {}
+    settings_dict = row.settings if isinstance(row.settings, dict) else {}
+    creds = unpack_credentials(row.credentialsEnc) if row.credentialsEnc else None
     out: dict[str, Any] | None
     log: str
+    extra_headers = _auth_headers_from_credentials(creds)
 
     if t == "webhook_outbound":
-        url = settings.get("url")
+        url = settings_dict.get("url")
         if not url or not isinstance(url, str):
             out = {"ok": False, "error": "settings.url is required for webhook_outbound"}
             log = "Invalid settings: missing url"
         else:
-            out, log = _http_request("POST", str(url), run)
+            try:
+                assert_connector_url_allowed(url, settings)
+            except ValueError as e:
+                return ({"ok": False, "error": f"url policy: {e}"}, str(e))
+            out, log = _http_request("POST", str(url), extra_headers, settings)
     elif t in ("http_get", "generic_rest", "http_poll"):
-        url = settings.get("url")
+        url = settings_dict.get("url")
         if not url or not isinstance(url, str):
             out = {"ok": False, "error": "settings.url is required"}
             log = "Invalid settings: missing url"
         else:
-            out, log = _http_request("GET", str(url), run)
+            try:
+                assert_connector_url_allowed(url, settings)
+            except ValueError as e:
+                return ({"ok": False, "error": f"url policy: {e}"}, str(e))
+            out, log = _http_request("GET", str(url), extra_headers, settings)
     else:
         out = {
             "ok": True,
@@ -98,14 +124,23 @@ def _run_connector_sync(
     return out, log
 
 
-def _http_request(method: str, url: str, run: JobRun) -> tuple[dict[str, Any], str]:
-    """Perform a best-effort outbound call (SSRF: restrict to admin-created connectors in production)."""
+def _http_request(
+    method: str,
+    url: str,
+    extra_headers: dict[str, str],
+    settings: Any,
+) -> tuple[dict[str, Any], str]:
+    """Best-effort outbound call with SSRF checks (before request) and limited redirect follow."""
     try:
-        with httpx.Client(timeout=20.0, follow_redirects=True) as client:
+        with httpx.Client(
+            timeout=20.0,
+            follow_redirects=bool(getattr(settings, "connector_http_follow_redirects", False)),
+        ) as client:
+            req_headers = {k: v for k, v in extra_headers.items()}
             if method == "GET":
-                r = client.get(url)
+                r = client.get(url, headers=req_headers)
             else:
-                r = client.post(url, json={})
+                r = client.post(url, json={}, headers=req_headers)
         body: dict[str, Any] = {
             "ok": 200 <= r.status_code < 300,
             "statusCode": r.status_code,

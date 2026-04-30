@@ -7,6 +7,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import Session, joinedload
 
 from nims.auth_context import AuthContext, auth_actor_from_context, require_write
+from nims.config import get_settings
 from nims.crypto_util import new_correlation_id
 from nims.deps import get_auth, get_db, require_auth_ctx
 from nims.json_util import to_input_json
@@ -225,6 +226,38 @@ def run_job(
     db.flush()
 
     if not defn.requiresApproval:
+        async_mode = get_settings().job_execution_mode.lower() in (
+            "async",
+            "asynchronous",
+            "queue",
+        )
+        if async_mode:
+            run.updatedAt = utc_now()
+            db.flush()
+            record_audit(
+                db,
+                organization_id=ctx.organization.id,
+                actor=auth_actor_from_context(ctx),
+                action="job_queued",
+                resource_type="JobRun",
+                resource_id=str(run.id),
+                correlation_id=correlation_id,
+                after=columns_dict(run),
+            )
+            db.commit()
+            updated = (
+                db.execute(
+                    select(JobRun).where(JobRun.id == run.id).options(joinedload(JobRun.JobDefinition_))
+                )
+                .unique()
+                .scalar_one()
+            )
+            return {
+                "item": serialize_job_run(updated),
+                "correlationId": correlation_id,
+                "queued": True,
+                "message": "Run queued; process with the job worker (nims-worker).",
+            }
         run.status = Jobrunstatus.RUNNING
         run.updatedAt = utc_now()
         db.flush()
@@ -242,8 +275,8 @@ def run_job(
             organization_id=ctx.organization.id,
             actor=auth_actor_from_context(ctx),
             action="job_run",
-            resourceType="JobRun",
-            resourceId=str(run.id),
+            resource_type="JobRun",
+            resource_id=str(run.id),
             correlation_id=correlation_id,
             after=columns_dict(run),
         )
@@ -253,15 +286,19 @@ def run_job(
             .unique()
             .scalar_one()
         )
-        return {"item": serialize_job_run(updated), "correlationId": correlation_id}
+        return {
+            "item": serialize_job_run(updated),
+            "correlationId": correlation_id,
+            "queued": False,
+        }
 
     record_audit(
         db,
         organization_id=ctx.organization.id,
         actor=auth_actor_from_context(ctx),
         action="job_run_pending_approval",
-        resourceType="JobRun",
-        resourceId=str(run.id),
+        resource_type="JobRun",
+        resource_id=str(run.id),
         correlation_id=correlation_id,
         after=columns_dict(run),
     )
@@ -326,8 +363,8 @@ def create_change_request(
         organization_id=ctx.organization.id,
         actor=auth_actor_from_context(ctx),
         action="create",
-        resourceType="ChangeRequest",
-        resourceId=str(cr.id),
+        resource_type="ChangeRequest",
+        resource_id=str(cr.id),
         correlation_id=correlation_id,
         after=columns_dict(cr),
     )

@@ -23,6 +23,7 @@ dependencies = [
 
 [project.scripts]
 nims-api = "nims.cli:main"
+nims-worker = "nims.worker:main"
 nims-seed = "nims.seed_db:main"
 nims-seed-bulk = "nims.seed_provider_bulk:main"
 

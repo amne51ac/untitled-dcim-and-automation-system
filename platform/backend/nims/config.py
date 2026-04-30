@@ -25,6 +25,26 @@ class Settings(BaseSettings):
     node_env: str = "development"
     # Optional. When set, used to derive the Fernet key for DB-stored IdP secrets; otherwise `jwt_secret` is used.
     identity_encryption_key: str | None = None
+    # --- Job execution: inline (synchronous in API) or async (PENDING; process with nims-worker). ---
+    job_execution_mode: str = "inline"  # inline | async
+    job_worker_poll_interval_sec: float = 2.0
+    job_worker_batch_size: int = 5
+    # --- Connector: at-rest secrets + outbound URL policy. ---
+    # 44-byte urlsafe base64 Fernet key from `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+    # When unset, credentials are stored as raw JSON in DB (suitable for dev only).
+    connector_secrets_fernet_key: str | None = None
+    # During key rotation, decrypt with this, re-encrypt with primary; optional.
+    connector_secrets_fernet_key_previous: str | None = None
+    # Reference only (e.g. AWS KMS key ARN); wire a secrets backend before production. Not read by the app today.
+    connector_secrets_kms_key_id: str | None = None
+    # Block RFC1918, loopback, link-local, and metadata-style ranges before outbound requests.
+    connector_url_block_private_networks: bool = True
+    # If set, hostname must also match at least one suffix (e.g. "api.vendor.com,example.net"). Public IP URLs ignore this; use for corporate allowlists.
+    connector_url_allowed_host_suffixes: str | None = None
+    # Comma-separated, e.g. "https" or "https,http" for local dev. Production: https only.
+    connector_url_http_allowed_schemes: str = "https,http"
+    # Hardening: do not follow redirects to internal endpoints (recommend false).
+    connector_http_follow_redirects: bool = False
 
 
 @lru_cache

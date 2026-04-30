@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="IntentCenter Phase 1 platform — FastAPI, REST v1, web console, bulk APIs." />
+  <meta name="description" content="IntentCenter Phase 1 — FastAPI, React console, UI extensibility, jobs, connectors, sign-in options." />
   <title>Platform &amp; API — IntentCenter</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -55,6 +55,27 @@
       <li><strong>Graph only</strong> — <code class="mono">GET /v1/resource-graph/{resourceType}/{id}</code></li>
     </ul>
 
+    <h2>Sign-in &amp; identity (summary)</h2>
+    <p>
+      The console supports <strong>local email/password</strong> (optional) and <strong>at most one</strong> of
+      <strong>LDAP</strong>, <strong>Microsoft Entra</strong>, or <strong>OIDC</strong>, configured under
+      <strong>Administration → Sign-in &amp; identity</strong> and/or <code class="mono">AUTH_*</code> env (env wins; UI
+      is read-only for those fields). Unauthenticated: <code class="mono">GET /v1/auth/providers</code>. Admin:
+      <code class="mono">GET/PATCH /v1/admin/identity</code>. Full contract:
+      <a class="github-inline" href="https://github.com/amne51ac/intentcenter/blob/main/docs/design-auth-user-management.md" rel="noopener noreferrer" target="_blank"
+        ><img class="github-mark-inline" src="assets/github-mark.svg" width="16" height="16" alt="" aria-hidden="true" />
+        <span>design-auth-user-management.md</span></a
+      >.
+    </p>
+
+    <h2>Extensibility &amp; jobs</h2>
+    <ul>
+      <li><strong>UI:</strong> <code class="mono">GET /v1/ui/page-registry</code>, <code class="mono">GET /v1/ui/placements</code>, <code class="mono">GET /v1/ui/navigation</code>, <code class="mono">GET /v1/ui/federation</code> (builtin-only manifest).</li>
+      <li><strong>Admin:</strong> <code class="mono">/v1/admin/plugin-placements</code>, <code class="mono">/v1/connectors</code>, <code class="mono">GET /v1/plugins</code>.</li>
+      <li><strong>Jobs:</strong> <code class="mono">/v1/jobs</code>, <code class="mono">POST /v1/jobs/{key}/run</code> (returns <code class="mono">queued: true</code> when <code class="mono">JOB_EXECUTION_MODE=async</code>), <code class="mono">/v1/job-runs</code>; run <strong>nims-worker</strong> as a second process to drain the queue.</li>
+      <li><strong>Reserved:</strong> <code class="mono">POST /v1/plugins/install</code> returns <strong>501</strong> until signing and an artifact store exist.</li>
+    </ul>
+
     <h2>REST touchpoints (UI-centric)</h2>
     <table>
       <thead>
@@ -66,6 +87,12 @@
       <tbody>
         <tr><td>Search</td><td><code class="mono">GET /v1/search?q=&amp;limit=</code></td></tr>
         <tr><td>Me / preferences</td><td><code class="mono">GET /v1/me</code>, <code class="mono">PATCH /v1/me</code></td></tr>
+        <tr><td>Sign-in catalog</td><td><code class="mono">GET /v1/auth/providers</code></td></tr>
+        <tr><td>Identity (admin)</td><td><code class="mono">GET /v1/admin/identity</code>, <code class="mono">PATCH /v1/admin/identity</code></td></tr>
+        <tr><td>UI registry / slots / nav</td><td><code class="mono">GET /v1/ui/page-registry</code>, <code class="mono">/v1/ui/placements</code>, <code class="mono">/v1/ui/navigation</code>, <code class="mono">/v1/ui/federation</code></td></tr>
+        <tr><td>Plugins (list)</td><td><code class="mono">GET /v1/plugins</code></td></tr>
+        <tr><td>Connectors</td><td><code class="mono">GET/POST/PATCH/DELETE /v1/connectors</code> (admin for writes)</td></tr>
+        <tr><td>Jobs &amp; runs</td><td><code class="mono">GET /v1/jobs</code>, <code class="mono">POST /v1/jobs/{key}/run</code>, <code class="mono">GET /v1/job-runs</code></td></tr>
         <tr><td>Bulk CSV/JSON</td><td><code class="mono">GET /v1/bulk/{resourceType}/export</code>, <code class="mono">POST /v1/bulk/{resourceType}/import/csv</code>, <code class="mono">POST /v1/bulk/{resourceType}/import/json</code></td></tr>
         <tr><td>Object view</td><td><code class="mono">GET /v1/resource-view/{resourceType}/{id}</code></td></tr>
         <tr><td>Graph only</td><td><code class="mono">GET /v1/resource-graph/{resourceType}/{id}</code></td></tr>

@@ -12,14 +12,33 @@ IntentCenter **Phase 1** stack: **FastAPI** (`backend/nims`), **PostgreSQL**, **
 
 ## Sign-in & identity (admin)
 
-Identity settings are stored per **organization** in `Organization.identityConfig` (JSON, Prisma migration `20260429130000_org_identity_config`) and merged with **environment variables** where set (env wins; those values are read-only in the UI).
+Identity settings are stored per **organization** in `Organization.identityConfig` (JSON) and merged with **environment variables** where set (env wins; those values are read-only in the UI).
 
-- **Admin UI (ADMIN only):** `/app/platform/admin/identity` — checkbox for **email and password**, radio group for **at most one** external directory (none, LDAP, Microsoft Entra, OpenID Connect), only the selected directory’s fields shown; **Save changes** enabled only when there are unsaved edits.
-- **API:** `GET /v1/admin/identity`, `PATCH /v1/admin/identity` (same access as other admin routes).
-- **Public (unauthenticated):** `GET /v1/auth/providers` — which sign-in methods are **enabled** for the first organization, using merged env + DB config.
-- **Secrets:** IdP secrets saved in the database are encrypted at rest (`IDENTITY_ENCRYPTION_KEY` or derived from `JWT_SECRET`); the admin API never returns plaintext secrets to the browser (masked or omitted).
+| Option | Notes |
+|--------|--------|
+| **Local** | Email + password — optional; can be combined with one external directory. |
+| **LDAP / AD** | At most one of LDAP, Entra, or OIDC. Interactive bind flows may still be partial; see design doc. |
+| **Microsoft Entra ID** | App registration fields via admin UI or `AUTH_AZURE_*` env. |
+| **OpenID Connect** | Issuer, client, redirect — `AUTH_OIDC_*` env or DB. |
+| **SSO start** | `GET /v1/auth/sso/{provider}/start` may return **501** until redirect/callback wiring is complete. |
 
-Full variable list and behavior: [`docs/design-auth-user-management.md`](../docs/design-auth-user-management.md) and [`.env.example`](.env.example).
+- **Admin UI (ADMIN only):** `/app/platform/admin/identity` — local checkbox + **at most one** external type; **Save** only when there are unsaved edits.
+- **API:** `GET /v1/admin/identity`, `PATCH /v1/admin/identity`.
+- **Public (unauthenticated):** `GET /v1/auth/providers` — effective provider catalog for the first organization.
+- **Secrets:** IdP secrets in DB are encrypted at rest; never returned in plaintext to the browser.
+
+Full variable list: [`docs/design-auth-user-management.md`](../docs/design-auth-user-management.md) and [`.env.example`](.env.example).
+
+## Extensibility, plugins, and automation
+
+| Area | What exists today |
+|------|-------------------|
+| **Plugin packages** | `PluginRegistration` per org (`GET /v1/plugins`); admin **Plugins & extensions** registers packages, **placements** (page + slot + widget key), and **connectors**. |
+| **UI** | `GET /v1/ui/page-registry` (auth), `GET /v1/ui/placements`, `GET /v1/ui/navigation` (core + `manifest.navigation`), `GET /v1/ui/federation` (**builtin** only). Object view loads **slots** with macro-bound props. |
+| **Connectors** | `GET/POST/PATCH/DELETE /v1/connectors` (admin for writes); optional **Fernet** for `credentialsEnc`; outbound HTTP uses **URL policy** (block private networks; optional host suffix allowlist). |
+| **Jobs** | `GET/POST /v1/jobs`, `POST /v1/jobs/{key}/run`, `GET /v1/job-runs` — default **inline** execution; set **`JOB_EXECUTION_MODE=async`** and run **`nims-worker`** to process `JobRun` rows off the API hot path. |
+
+Reserved / not yet implemented: `POST /v1/plugins/install` (**501**), remote module federation, full KMS for connector secrets. Summary: [§18 in `design-llm-assistant.md`](../docs/design-llm-assistant.md).
 
 ## API touchpoints for the UI
 
@@ -29,6 +48,11 @@ Full variable list and behavior: [`docs/design-auth-user-management.md`](../docs
 | Me / preferences | `GET /v1/me`, `PATCH /v1/me` |
 | Sign-in options (login page) | `GET /v1/auth/providers` |
 | Identity config (admin) | `GET /v1/admin/identity`, `PATCH /v1/admin/identity` |
+| UI extensibility | `GET /v1/ui/page-registry`, `GET /v1/ui/placements`, `GET /v1/ui/navigation`, `GET /v1/ui/federation` |
+| Plugins / placements (admin) | `GET/POST/PATCH/DELETE /v1/admin/plugin-placements` |
+| Connectors (admin writes) | `GET/POST/PATCH/DELETE /v1/connectors` |
+| Jobs | `GET /v1/jobs`, `POST /v1/jobs/{key}/run` (optional `queued` if async), `GET /v1/job-runs` |
+| Plugin install (reserved) | `POST /v1/plugins/install` → **501** until signing + store |
 | Bulk CSV/JSON | `GET /v1/bulk/{resourceType}/export`, `POST /v1/bulk/{resourceType}/import/csv`, `POST /v1/bulk/{resourceType}/import/json` (core types + catalog types — see `bulk.py`) |
 | Object view (UI) | `GET /v1/resource-view/{resourceType}/{id}` — item fields + graph |
 | Graph only | `GET /v1/resource-graph/{resourceType}/{id}` — relationship graph JSON |

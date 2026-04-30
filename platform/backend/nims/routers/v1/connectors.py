@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from typing import Annotated, Any
 
@@ -14,6 +13,7 @@ from sqlalchemy.orm import Session, joinedload
 from nims.auth_context import AuthContext, require_admin
 from nims.deps import get_auth, get_db, require_auth_ctx
 from nims.models_generated import Apitokenrole, ConnectorRegistration, PluginRegistration, User
+from nims.services.connector_credential_store import pack_credentials, unpack_credentials
 from nims.timeutil import utc_now
 
 router = APIRouter(prefix="/connectors", tags=["connectors"])
@@ -80,10 +80,8 @@ def _serialize_list_row(c: ConnectorRegistration) -> dict[str, object]:
 def _serialize_admin_detail(c: ConnectorRegistration) -> dict[str, object]:
     out = _serialize_list_row(c)
     if c.credentialsEnc:
-        try:
-            out["credentials"] = json.loads(c.credentialsEnc)
-        except json.JSONDecodeError:
-            out["credentials"] = None
+        d = unpack_credentials(c.credentialsEnc)
+        out["credentials"] = d if d is not None else None
     else:
         out["credentials"] = None
     return out
@@ -166,7 +164,7 @@ def create_connector(
     now = utc_now()
     enc: str | None
     if body.credentials is not None and len(body.credentials) > 0:
-        enc = json.dumps(body.credentials, separators=(",", ":"), sort_keys=True)
+        enc = pack_credentials(body.credentials)
     else:
         enc = None
     c = ConnectorRegistration(
@@ -231,11 +229,7 @@ def update_connector(
         _ = _plugin_for_org(db, ctx.organization.id, body.pluginRegistrationId)
         c.pluginRegistrationId = body.pluginRegistrationId
     if body.credentials is not None:
-        c.credentialsEnc = (
-            json.dumps(body.credentials, separators=(",", ":"), sort_keys=True)
-            if len(body.credentials) > 0
-            else None
-        )
+        c.credentialsEnc = pack_credentials(body.credentials) if len(body.credentials) > 0 else None
     c.updatedAt = utc_now()
     db.commit()
     db.refresh(c)
