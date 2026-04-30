@@ -1,13 +1,14 @@
 import uuid
 from typing import Annotated, Any, Literal
 
+import bcrypt
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, HttpUrl
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from nims.auth_context import AuthContext, require_admin, require_write
-from nims.crypto_util import generate_raw_token, hash_token
+from nims.auth_context import AuthContext, auth_actor_from_context, require_admin, require_write
+from nims.crypto_util import generate_raw_token, hash_password_bcrypt, hash_token
 from nims.deps import get_auth, get_db, require_auth_ctx
 from nims.models_generated import (
     ApiToken,
@@ -15,10 +16,12 @@ from nims.models_generated import (
     AuditEvent,
     PluginRegistration,
     User,
+    Userauthprovider,
     Webhookevent,
     WebhookSubscription,
 )
 from nims.serialize import serialize_audit_event, serialize_plugin
+from nims.services.audit import record_audit
 from nims.services.extensions import extension_map, upsert_extension
 from nims.timeutil import utc_now
 
@@ -40,6 +43,12 @@ class WebhookCreateBody(BaseModel):
 
 class MePatchBody(BaseModel):
     preferences: dict[str, Any] | None = None
+    displayName: str | None = None
+
+
+class MePasswordBody(BaseModel):
+    currentPassword: str = Field(min_length=1)
+    newPassword: str = Field(min_length=8, max_length=256)
 
 
 @router.get("/me")
@@ -71,6 +80,7 @@ def get_me(
                     "displayName": a.user.displayName,
                     "role": a.role.value,
                     "authProvider": a.user.authProvider,
+                    "isActive": urow.isActive if urow is not None else True,
                 },
             },
         }
@@ -107,8 +117,88 @@ def patch_me(
         cur.update(body.preferences)
         user.preferences = cur
         user.updatedAt = utc_now()
+    if body.displayName is not None:
+        user.displayName = body.displayName.strip() or None
+        user.updatedAt = utc_now()
     db.commit()
     return get_me(db, auth)
+
+
+@router.post("/me/password")
+def post_me_password(
+    body: MePasswordBody,
+    db: Session = Depends(get_db),
+    auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
+) -> dict[str, object]:
+    ctx = require_auth_ctx(auth)
+    if ctx.user is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Interactive session required")
+    if ctx.user.authProvider and ctx.user.authProvider.upper() != "LOCAL":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password change is only available for local accounts",
+        )
+    user = db.execute(select(User).where(User.id == uuid.UUID(str(ctx.user.id)))).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if user.authProvider != Userauthprovider.LOCAL:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password change is only available for local accounts",
+        )
+    stored_hash = (user.passwordHash or "").strip()
+    if not stored_hash:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No local password is set for this account")
+    try:
+        ok = bcrypt.checkpw(body.currentPassword.encode("utf-8"), stored_hash.encode("utf-8"))
+    except ValueError:
+        ok = False
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+    user.passwordHash = hash_password_bcrypt(body.newPassword)
+    user.updatedAt = utc_now()
+    record_audit(
+        db,
+        organization_id=ctx.organization.id,
+        actor=auth_actor_from_context(ctx),
+        action="UPDATE",
+        resource_type="User",
+        resource_id=str(user.id),
+        after={"field": "password", "rotated": True},
+    )
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/tokens")
+def get_tokens(
+    db: Session = Depends(get_db),
+    auth: Annotated[AuthContext | None, Depends(get_auth)] = None,
+) -> dict[str, list[dict[str, object]]]:
+    """List API tokens for this organization (metadata only; never the secret)."""
+    ctx = require_admin(require_auth_ctx(auth))
+    rows = (
+        db.execute(
+            select(ApiToken)
+            .where(ApiToken.organizationId == ctx.organization.id)
+            .order_by(ApiToken.createdAt.desc())
+        )
+        .scalars()
+        .all()
+    )
+    items: list[dict[str, object]] = []
+    for t in rows:
+        items.append(
+            {
+                "id": str(t.id),
+                "name": t.name,
+                "role": t.role.value,
+                "createdAt": t.createdAt.isoformat() if t.createdAt else None,
+                "expiresAt": t.expiresAt.isoformat() if t.expiresAt else None,
+                "lastUsedAt": t.lastUsedAt.isoformat() if t.lastUsedAt else None,
+            }
+        )
+    return {"items": items}
 
 
 @router.post("/tokens")

@@ -45,78 +45,14 @@ def _role_to_str(role: object) -> str:
     return str(role)
 
 
-def auth_provider_catalog() -> dict[str, list[dict[str, object]]]:
-    import os
-
-    providers: list[dict[str, object]] = [
-        {"id": "local", "label": "Email & password", "kind": "password", "enabled": True}
-    ]
-    if os.environ.get("AUTH_LDAP_URL"):
-        providers.append(
-            {
-                "id": "ldap",
-                "label": "LDAP / Active Directory",
-                "kind": "ldap",
-                "enabled": False,
-                "note": "Configure worker; bind flow not enabled in this build.",
-            }
-        )
-    else:
-        providers.append(
-            {
-                "id": "ldap",
-                "label": "LDAP / Active Directory",
-                "kind": "ldap",
-                "enabled": False,
-                "note": "Set AUTH_LDAP_URL and deploy LDAP bridge (Phase 2).",
-            }
-        )
-    if os.environ.get("AUTH_AZURE_TENANT_ID") and os.environ.get("AUTH_AZURE_CLIENT_ID"):
-        providers.append(
-            {
-                "id": "azure_ad",
-                "label": "Microsoft Entra ID (Azure AD)",
-                "kind": "azure_ad",
-                "enabled": False,
-                "note": "OIDC routes wired; complete consent and callback (Phase 2).",
-            }
-        )
-    else:
-        providers.append(
-            {
-                "id": "azure_ad",
-                "label": "Microsoft Entra ID (Azure AD)",
-                "kind": "azure_ad",
-                "enabled": False,
-                "note": "Set AUTH_AZURE_TENANT_ID and AUTH_AZURE_CLIENT_ID.",
-            }
-        )
-    if os.environ.get("AUTH_OIDC_ISSUER") and os.environ.get("AUTH_OIDC_CLIENT_ID"):
-        providers.append(
-            {
-                "id": "oidc",
-                "label": "OpenID Connect",
-                "kind": "oidc",
-                "enabled": False,
-                "note": "Authorization server discovery pending (Phase 2).",
-            }
-        )
-    else:
-        providers.append(
-            {
-                "id": "oidc",
-                "label": "OpenID Connect (generic)",
-                "kind": "oidc",
-                "enabled": False,
-                "note": "Set AUTH_OIDC_ISSUER and AUTH_OIDC_CLIENT_ID.",
-            }
-        )
-    return {"providers": providers}
-
-
 @router.get("/auth/providers")
-def get_providers() -> dict[str, list[dict[str, object]]]:
-    return auth_provider_catalog()
+def get_providers(
+    db: Session = Depends(get_db),
+) -> dict[str, list[dict[str, object]]]:
+    from nims.services.identity_settings import build_public_auth_provider_catalog, get_first_organization
+
+    org = get_first_organization(db)
+    return build_public_auth_provider_catalog(org)  # type: ignore[return-value]
 
 
 @router.post("/auth/login")
@@ -150,6 +86,15 @@ def post_login(
         )
     if org.deletedAt is not None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization inactive")
+    if not user.isActive:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is disabled")
+    from nims.services.identity_settings import can_use_local_sign_in
+
+    if not can_use_local_sign_in(org):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Local email/password sign-in is disabled for this organization. Use single sign-on.",
+        )
 
     from nims.timeutil import utc_now
 

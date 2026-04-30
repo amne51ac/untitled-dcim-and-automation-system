@@ -4,7 +4,7 @@
  */
 
 export type SidebarNavItem =
-  | { kind: "route"; label: string; to: string }
+  | { kind: "route"; label: string; to: string; adminOnly?: boolean }
   | { kind: "catalog"; label: string; slug: string }
   | { kind: "stub"; label: string; slug: string };
 
@@ -163,6 +163,7 @@ const SIDEBAR_NAV_SECTIONS: SidebarNavSection[] = [
     id: "platform",
     title: "Platform",
     items: [
+      { kind: "route", label: "Administration", to: "/platform/admin", adminOnly: true },
       { kind: "route", label: "Jobs", to: "/platform/jobs" },
       { kind: "route", label: "Job runs", to: "/platform/job-runs" },
       { kind: "route", label: "Audit log", to: "/platform/audit" },

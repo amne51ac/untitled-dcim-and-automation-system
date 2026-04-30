@@ -39,4 +39,5 @@ ENV NIMS_RELOAD=false
 ENV NODE_ENV=production
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["/app/backend/.venv/bin/python", "-m", "uvicorn", "nims.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Trust X-Forwarded-* from the ALB (not 127.0.0.1) so url/client metadata and cookie Secure match viewer HTTPS.
+CMD ["/app/backend/.venv/bin/python", "-m", "uvicorn", "nims.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers", "--forwarded-allow-ips", "*"]

@@ -5,6 +5,41 @@ import { apiJson } from "./api/client";
 import { BlockLoader } from "./components/Loader";
 import * as P from "./lazyPages";
 
+type MeForAdmin = {
+  auth:
+    | { mode: "user"; user: { role: string } }
+    | { mode: "api_token"; token: { role: string } };
+};
+
+function isAdminUser(data: MeForAdmin | undefined): boolean {
+  if (!data) return false;
+  if (data.auth.mode === "user") return data.auth.user.role === "ADMIN";
+  if (data.auth.mode === "api_token") return data.auth.token.role === "ADMIN";
+  return false;
+}
+
+function RequireAdmin({ children }: { children: ReactNode }) {
+  const session = useQuery({
+    queryKey: ["me"],
+    queryFn: () => apiJson<MeForAdmin>("/v1/me"),
+    retry: false,
+  });
+
+  if (session.isLoading) {
+    return (
+      <div className="main">
+        <BlockLoader label="Loading…" />
+      </div>
+    );
+  }
+
+  if (session.isError || !isAdminUser(session.data)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 function RequireAuth({ children }: { children: ReactNode }) {
   const session = useQuery({
     queryKey: ["me"],
@@ -84,6 +119,31 @@ export default function App() {
           <Route path="platform/services/new" element={<P.ServiceFormPage />} />
           <Route path="platform/services/:serviceId/edit" element={<P.ServiceFormPage />} />
           <Route path="platform/services" element={<P.ServicesPage />} />
+          <Route
+            path="platform/admin"
+            element={
+              <RequireAdmin>
+                <P.AdminLayout />
+              </RequireAdmin>
+            }
+          >
+            <Route index element={<Navigate to="tokens" replace />} />
+            <Route path="tokens" element={<P.ApiTokensPage />} />
+            <Route path="users" element={<P.UsersPage />} />
+            <Route path="audit" element={<P.AuditPage />} />
+            <Route path="docs" element={<P.AdminDocsPage />} />
+            <Route path="health" element={<P.AdminHealthPage />} />
+            <Route path="identity" element={<P.IdentityPage />} />
+          </Route>
+          <Route path="account" element={<P.AccountPage />} />
+          <Route
+            path="organization/users"
+            element={
+              <RequireAdmin>
+                <P.UsersPage />
+              </RequireAdmin>
+            }
+          />
           <Route path="platform/audit" element={<P.AuditPage />} />
           <Route path="platform/object-templates/:templateId/edit" element={<P.ObjectTemplateEditPage />} />
           <Route path="platform/object-templates" element={<P.ObjectTemplatesPage />} />

@@ -48,8 +48,13 @@ async function countList(path: string): Promise<number> {
   return data.items.length;
 }
 
-function countKey(sectionId: string, itemIndex: number): string {
-  return `${sectionId}:${itemIndex}`;
+function countKey(sectionId: string, item: SidebarNavItem): string {
+  return `${sectionId}:${navItemToPath(item)}`;
+}
+
+function itemVisibleForOverview(item: SidebarNavItem, isAdmin: boolean): boolean {
+  if (item.kind === "route" && item.adminOnly) return isAdmin;
+  return true;
 }
 
 async function fetchCountForItem(item: SidebarNavItem): Promise<number | null> {
@@ -71,15 +76,16 @@ async function fetchCountForItem(item: SidebarNavItem): Promise<number | null> {
   return null;
 }
 
-async function fetchOverviewCounts(): Promise<Record<string, number | null>> {
+async function fetchOverviewCounts(isAdmin: boolean): Promise<Record<string, number | null>> {
   const tasks: Promise<[string, number | null]>[] = [];
   for (const section of SIDEBAR_NAV) {
-    section.items.forEach((item, itemIndex) => {
-      const key = countKey(section.id, itemIndex);
+    for (const item of section.items) {
+      if (!itemVisibleForOverview(item, isAdmin)) continue;
+      const key = countKey(section.id, item);
       tasks.push(
         fetchCountForItem(item).then((count) => [key, count] as [string, number | null]),
       );
-    });
+    }
   }
   const rows = await Promise.all(tasks);
   return Object.fromEntries(rows);
@@ -91,9 +97,15 @@ export function Dashboard() {
     queryFn: () => apiJson<Me>("/v1/me"),
   });
 
+  const isAdmin = Boolean(
+    me.data &&
+      (me.data.auth.mode === "user" ? me.data.auth.user.role === "ADMIN" : me.data.auth.token.role === "ADMIN"),
+  );
+
   const counts = useQuery({
-    queryKey: ["dashboard-overview-counts"],
-    queryFn: fetchOverviewCounts,
+    queryKey: ["dashboard-overview-counts", isAdmin],
+    queryFn: () => fetchOverviewCounts(isAdmin),
+    enabled: Boolean(me.data),
   });
 
   if (me.isLoading) {
@@ -117,11 +129,7 @@ export function Dashboard() {
   }
 
   const m = me.data!;
-  const role = m.auth.mode === "user" ? m.auth.user.role : m.auth.token.role;
-  const label =
-    m.auth.mode === "user"
-      ? m.auth.user.displayName || m.auth.user.email
-      : `API token · ${m.auth.token.name}`;
+  const canSeeAdmin = isAdmin;
 
   const c = counts.data;
 
@@ -129,21 +137,11 @@ export function Dashboard() {
     <>
       <ModelListPageHeader
         title="Overview"
-        subtitle="Jump to any inventory list, or use the sidebar. Counts update from each list API."
+        subtitle="Jump to any inventory list. Counts update from each list API."
         showBulkTools={false}
       />
       <div className="main-body overview-page">
         <div className="context-strip">
-          <div className="context-strip-cluster">
-            <p className="context-strip-heading">Signed in</p>
-            <p className="context-strip-body">
-              <span className="mono">{label}</span>{" "}
-              <span className={"badge " + (role === "ADMIN" ? "badge-admin" : "")}>{role}</span>
-              {m.auth.mode === "user" ? (
-                <span className="muted"> · {m.auth.user.authProvider}</span>
-              ) : null}
-            </p>
-          </div>
           <div className="context-strip-cluster">
             <p className="context-strip-heading">Organization</p>
             <p className="context-strip-body">
@@ -161,15 +159,18 @@ export function Dashboard() {
         {counts.error ? <div className="error-banner">{String(counts.error)}</div> : null}
 
         <div className="overview-categories">
-          {SIDEBAR_NAV.map((section) => (
+          {SIDEBAR_NAV.map((section) => {
+            const items = section.items.filter((item) => itemVisibleForOverview(item, canSeeAdmin));
+            if (items.length === 0) return null;
+            return (
             <section key={section.id} className="overview-category">
               <h3 className="overview-category-title">{section.title}</h3>
               <ul className="overview-type-list">
-                {section.items.map((item, itemIndex) => {
+                {items.map((item) => {
                   const to = navItemToPath(item);
                   const kindClass =
                     item.kind === "stub" ? "overview-type-kind overview-type-kind-stub" : "overview-type-kind overview-type-kind-live";
-                  const countVal = c ? c[countKey(section.id, itemIndex)] : null;
+                  const countVal = c ? c[countKey(section.id, item)] : null;
                   const countDisplay =
                     item.kind === "stub"
                       ? "—"
@@ -184,7 +185,7 @@ export function Dashboard() {
                         : "Rows in current list";
 
                   return (
-                    <li key={`${section.id}-${itemIndex}`} className="overview-type-row">
+                    <li key={countKey(section.id, item)} className="overview-type-row">
                       <Link to={to} className="overview-type-link">
                         {item.label}
                       </Link>
@@ -199,7 +200,8 @@ export function Dashboard() {
                 })}
               </ul>
             </section>
-          ))}
+            );
+          })}
         </div>
 
         <p className="muted" style={{ marginBottom: 0 }}>

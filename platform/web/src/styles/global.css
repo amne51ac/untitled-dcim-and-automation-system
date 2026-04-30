@@ -91,21 +91,27 @@ a:hover {
   margin-bottom: 0.75rem;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  text-align: center;
 }
 
-.sidebar-brand-link {
-  display: block;
+.sidebar .sidebar-brand-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
   line-height: 0;
   text-decoration: none !important;
+  box-sizing: border-box;
 }
 
-.sidebar-brand-link:hover .sidebar-wordmark,
-.sidebar-brand-link:focus-visible .sidebar-wordmark {
+.sidebar .sidebar-brand-link:hover .sidebar-wordmark,
+.sidebar .sidebar-brand-link:focus-visible .sidebar-wordmark {
   opacity: 0.92;
 }
 
-.sidebar-brand-link:focus-visible {
+.sidebar .sidebar-brand-link:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 4px;
@@ -113,13 +119,16 @@ a:hover {
 
 .sidebar-wordmark {
   display: block;
-  height: 1.75rem;
+  height: 3.5rem;
   width: auto;
   max-width: 100%;
+  margin: 0 auto;
+  flex-shrink: 0;
 }
 
 .brand-tagline {
   margin: 0.55rem 0 0;
+  width: 100%;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   font-weight: 500;
@@ -127,7 +136,7 @@ a:hover {
   text-transform: uppercase;
   color: var(--text-muted);
   line-height: 1.45;
-  max-width: 14rem;
+  text-align: center;
 }
 
 .nav-section {
@@ -182,6 +191,13 @@ a:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.main > .admin-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Wrap header + .main-body so the body column gets a bounded height and overflow-y works */
@@ -906,6 +922,191 @@ tr.data-row-clickable:hover td {
   margin-top: auto;
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--border);
+}
+
+/* Bottom-left user menu (account, admin, sign out) */
+.sidebar-user-menu {
+  position: relative;
+  width: 100%;
+}
+
+.sidebar-user-menu-trigger {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.5rem 0.48rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.2;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.sidebar-user-menu-trigger:hover,
+.sidebar-user-menu-trigger:focus-visible {
+  border-color: var(--accent-dim);
+  outline: none;
+}
+
+.sidebar-user-menu-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sidebar-user-menu-primary {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-heading);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-menu-secondary {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-menu-chevron {
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: 0.28rem;
+  margin-right: 0.1rem;
+  border-right: 1.5px solid var(--text-muted);
+  border-bottom: 1.5px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.12s ease;
+}
+
+.sidebar-user-menu-chevron[data-open="true"] {
+  transform: rotate(225deg);
+  margin-top: 0.38rem;
+}
+
+.sidebar-user-menu-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 0.4rem;
+  list-style: none;
+  padding: 0.3rem 0;
+  margin: 0 0 0.4rem 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.4);
+  z-index: 40;
+}
+
+.sidebar-user-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.48rem 0.8rem;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.sidebar-user-menu-item:hover,
+.sidebar-user-menu-item:focus-visible {
+  background: rgba(232, 184, 78, 0.08);
+  outline: none;
+}
+
+.sidebar-user-menu-item-danger {
+  color: var(--danger);
+}
+
+/* Administration: sub-navigation + outlet */
+.admin-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.admin-subnav {
+  flex-shrink: 0;
+  padding: 0.65rem 1.25rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(22, 28, 40, 0.6) 0%, transparent 100%);
+}
+
+.admin-subnav-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.admin-subnav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+}
+
+.admin-subnav-link {
+  display: inline-block;
+  padding: 0.38rem 0.65rem;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: color 0.1s ease, background 0.1s ease, border-color 0.1s ease;
+}
+
+.admin-subnav-link:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-subnav-link-active {
+  color: var(--text-heading);
+  border-color: var(--accent-dim);
+  background: rgba(232, 184, 78, 0.08);
+}
+
+.admin-layout-outlet {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-docs-link {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.admin-docs-link:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
 }
 
 .pinned-pages-section {

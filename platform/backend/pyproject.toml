@@ -18,6 +18,7 @@ dependencies = [
   "bcrypt>=4.2.0",
   "httpx>=0.28.0",
   "strawberry-graphql[fastapi]>=0.253.0",
+  "cryptography>=44.0.0",
 ]
 
 [project.scripts]

@@ -13,6 +13,8 @@ Key entry points:
 | `index.html` | Product landing + **in-app screenshots**; **live demo** at [https://demo.intentcenter.io](https://demo.intentcenter.io) |
 | `documentation.html` | Doc hub and links to repo sources |
 | `architecture.md` / `architecture.html` | Target architecture (diagrams) |
+| `design-auth-user-management.md` | Auth, users, API tokens, and **sign-in & identity** (local + LDAP / Entra / OIDC, env vs DB, admin API) |
+| `design-api-token-authentication.md` | Bearer token authentication for automation |
 | `design-llm-assistant.md` / `llm-assistant.html` | LLM copilot design |
 | `assets/site.css`, `assets/github-mark.svg`, `assets/intentcenter-logo.svg`, `assets/favicon.svg` | Shared styles, GitHub mark for links, and marks |
 | `assets/screenshots/*.png` | Product UI reference imagery for the static site |

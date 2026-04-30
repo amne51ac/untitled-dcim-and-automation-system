@@ -132,6 +132,7 @@ class Organization(Base):
     createdAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
     updatedAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
     deletedAt: Mapped[Optional[datetime.datetime]] = mapped_column(TIMESTAMP(precision=3))
+    identityConfig: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
 
     ApiToken: Mapped[list['ApiToken']] = relationship('ApiToken', back_populates='Organization_')
     AuditEvent: Mapped[list['AuditEvent']] = relationship('AuditEvent', back_populates='Organization_')
@@ -859,6 +860,7 @@ class User(Base):
     createdAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False, server_default=text('CURRENT_TIMESTAMP'))
     updatedAt: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=3), nullable=False)
     preferences: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    isActive: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text('true'))
     displayName: Mapped[Optional[str]] = mapped_column(Text)
     passwordHash: Mapped[Optional[str]] = mapped_column(Text)
     externalSubject: Mapped[Optional[str]] = mapped_column(Text)

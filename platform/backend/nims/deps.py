@@ -1,4 +1,5 @@
 import uuid
+from enum import Enum
 from typing import Annotated
 
 import jwt
@@ -35,26 +36,34 @@ def resolve_auth(db: Session, request: Request) -> AuthContext | None:
     if raw:
         try:
             payload = jwt.decode(raw, settings.jwt_secret, algorithms=["HS256"])
-            sub = payload.get("sub")
-            if not sub:
-                return None
+        except jwt.PyJWTError:
+            return None
+        sub = payload.get("sub")
+        if not sub:
+            return None
+        try:
             user = db.execute(
                 select(User).where(User.id == uuid.UUID(str(sub))).options(joinedload(User.Organization_))
             ).scalar_one_or_none()
-            if user is None or user.Organization_.deletedAt is not None:
-                return None
-            return AuthContext(
-                organization=user.Organization_,
-                role=user.role,
-                user=UserAuth(
-                    id=str(user.id),
-                    email=user.email,
-                    displayName=user.displayName,
-                    authProvider=user.authProvider.value,
-                ),
-            )
-        except jwt.PyJWTError:
+        except (ValueError, TypeError):
             return None
+        if user is None or not user.isActive:
+            return None
+        org = user.Organization_
+        if org is None or org.deletedAt is not None:
+            return None
+        ap = user.authProvider
+        ap_str = ap.value if isinstance(ap, Enum) else str(ap)
+        return AuthContext(
+            organization=org,
+            role=user.role,
+            user=UserAuth(
+                id=str(user.id),
+                email=user.email,
+                displayName=user.displayName,
+                authProvider=ap_str,
+            ),
+        )
 
     return None
 

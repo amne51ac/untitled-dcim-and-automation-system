@@ -16,6 +16,8 @@ model Organization {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   slug      String   @unique
+  /// Instance identity: local + IdP (LDAP, Entra, OIDC). Merged with env; env wins.
+  identityConfig Json  @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
@@ -119,6 +121,8 @@ model User {
   externalSubject String?
   /// UI prefs: pinned pages, etc. `{ "pinnedPages": [ { "path": "/dcim/devices", "label": "Devices" } ] }`
   preferences    Json     @default("{}")
+  /// When false, interactive sign-in is blocked (org admins can reactivate).
+  isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

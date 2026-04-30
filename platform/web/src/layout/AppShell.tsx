@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { apiJson, logout } from "../api/client";
+import { useState } from "react";
+import { NavLink, Outlet } from "react-router-dom";
+import { apiJson } from "../api/client";
 import { CollapsibleNavSection } from "../components/CollapsibleNavSection";
 import { GlobalSearch } from "../components/GlobalSearch";
+import { SidebarUserMenu } from "../components/SidebarUserMenu";
 import { publicAssetUrl } from "../lib/publicAssetUrl";
 import { SIDEBAR_NAV, navItemToPath, type SidebarNavItem } from "../nav/sidebarNav";
 
@@ -23,11 +25,12 @@ type PinnedPage = { path: string; label: string };
 
 type Me = {
   preferences?: { pinnedPages?: PinnedPage[] };
-  auth: { mode: "user" } | { mode: "api_token" };
+  auth:
+    | { mode: "user"; user: { role: string; email: string; displayName: string | null } }
+    | { mode: "api_token"; token: { role: string; name: string } };
 };
 
 export function AppShell() {
-  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const me = useQuery({
@@ -43,17 +46,18 @@ export function AppShell() {
     },
   });
 
+  const [openNavSectionId, setOpenNavSectionId] = useState<string | null>(null);
+
   const isUser = me.data?.auth?.mode === "user";
+  const isAdmin =
+    me.data?.auth?.mode === "user"
+      ? me.data.auth.user.role === "ADMIN"
+      : me.data?.auth?.mode === "api_token" && me.data.auth.token.role === "ADMIN";
   const pinned = (me.data?.preferences?.pinnedPages ?? []) as PinnedPage[];
 
   function unpinOne(path: string) {
     if (!isUser) return;
     patchPrefs.mutate({ pinnedPages: pinned.filter((p) => p.path !== path) });
-  }
-
-  async function signOut() {
-    await logout();
-    navigate("/login", { replace: true });
   }
 
   return (
@@ -65,8 +69,8 @@ export function AppShell() {
               src={publicAssetUrl("intentcenter-logo.svg")}
               alt="IntentCenter"
               className="sidebar-wordmark"
-              width={200}
-              height={40}
+              width={350}
+              height={70}
             />
           </NavLink>
           <p className="brand-tagline">Network source of truth — intent & inventory</p>
@@ -103,24 +107,27 @@ export function AppShell() {
         </div>
 
         <nav className="sidebar-nav-scroll">
-          <div className="nav-section">
-            <NavLink to="/" end className={({ isActive }) => "nav-link" + (isActive ? " active" : "")}>
-              Overview
-            </NavLink>
-          </div>
           {SIDEBAR_NAV.map((section) => (
-            <CollapsibleNavSection key={section.id} id={section.id} title={section.title}>
-              {section.items.map((item) => (
-                <SidebarNavLink key={`${section.id}-${navItemToPath(item)}-${item.label}`} item={item} />
-              ))}
+            <CollapsibleNavSection
+              key={section.id}
+              id={section.id}
+              title={section.title}
+              open={openNavSectionId === section.id}
+              onToggle={() => {
+                setOpenNavSectionId((cur) => (cur === section.id ? null : section.id));
+              }}
+            >
+              {section.items
+                .filter((item) => (item.kind === "route" && item.adminOnly ? isAdmin : true))
+                .map((item) => (
+                  <SidebarNavLink key={`${section.id}-${navItemToPath(item)}-${item.label}`} item={item} />
+                ))}
             </CollapsibleNavSection>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <button type="button" className="btn btn-ghost" onClick={() => void signOut()}>
-            Sign out
-          </button>
+          <SidebarUserMenu me={me.data} />
         </div>
       </aside>
       <div className="main">

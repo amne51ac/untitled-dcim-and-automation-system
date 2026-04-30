@@ -3,6 +3,7 @@ import { lazy } from "react";
 /** Route-based code splits — keep initial `main` chunk small for first visit from marketing site. */
 export const LoginPage = lazy(() => import("./pages/Login").then((m) => ({ default: m.LoginPage })));
 export const AppShell = lazy(() => import("./layout/AppShell").then((m) => ({ default: m.AppShell })));
+export const AdminLayout = lazy(() => import("./layout/AdminLayout").then((m) => ({ default: m.AdminLayout })));
 export const Dashboard = lazy(() => import("./pages/Dashboard").then((m) => ({ default: m.Dashboard })));
 export const CircuitFormPage = lazy(() => import("./pages/circuits/CircuitFormPage").then((m) => ({ default: m.CircuitFormPage })));
 export const CircuitsPage = lazy(() => import("./pages/circuits/Circuits").then((m) => ({ default: m.CircuitsPage })));
@@ -22,7 +23,13 @@ export const VlanFormPage = lazy(() => import("./pages/ipam/VlanFormPage").then(
 export const VlansPage = lazy(() => import("./pages/ipam/Vlans").then((m) => ({ default: m.VlansPage })));
 export const VrfsPage = lazy(() => import("./pages/ipam/Vrfs").then((m) => ({ default: m.VrfsPage })));
 export const VrfFormPage = lazy(() => import("./pages/ipam/VrfFormPage").then((m) => ({ default: m.VrfFormPage })));
+export const AccountPage = lazy(() => import("./pages/AccountPage").then((m) => ({ default: m.AccountPage })));
+export const UsersPage = lazy(() => import("./pages/organization/UsersPage").then((m) => ({ default: m.UsersPage })));
 export const AuditPage = lazy(() => import("./pages/platform/Audit").then((m) => ({ default: m.AuditPage })));
+export const ApiTokensPage = lazy(() => import("./pages/platform/ApiTokensPage").then((m) => ({ default: m.ApiTokensPage })));
+export const AdminDocsPage = lazy(() => import("./pages/platform/AdminDocsPage").then((m) => ({ default: m.AdminDocsPage })));
+export const AdminHealthPage = lazy(() => import("./pages/platform/AdminHealthPage").then((m) => ({ default: m.AdminHealthPage })));
+export const IdentityPage = lazy(() => import("./pages/platform/IdentityPage").then((m) => ({ default: m.IdentityPage })));
 export const ObjectTemplatesPage = lazy(() => import("./pages/platform/ObjectTemplates").then((m) => ({ default: m.ObjectTemplatesPage })));
 export const JobFormPage = lazy(() => import("./pages/platform/JobFormPage").then((m) => ({ default: m.JobFormPage })));
 export const JobRunFormPage = lazy(() => import("./pages/platform/JobRunFormPage").then((m) => ({ default: m.JobRunFormPage })));

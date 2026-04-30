@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" width="320" height="64">
+  <!-- Shift artwork right so the mark + wordmark are visually centered in the viewBox (avoids a left-heavy crop when the asset is block-centered in CSS) -->
+  <g transform="translate(18, 0)">
   <!-- Mark: K4 graph (complete graph on 4 nodes) -->
   <g>
     <!-- Triangle perimeter -->
@@ -20,4 +22,5 @@
   <text x="80" y="42" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="600" letter-spacing="-0.4">
     <tspan fill="#e8b84e">Intent</tspan><tspan fill="#e8e8ea">Center</tspan>
   </text>
+  </g>
 </svg>

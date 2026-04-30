@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-only-set-JWT_SECRET-in-production"
     jwt_expires_in: str = "12h"
     node_env: str = "development"
+    # Optional. When set, used to derive the Fernet key for DB-stored IdP secrets; otherwise `jwt_secret` is used.
+    identity_encryption_key: str | None = None
 
 
 @lru_cache

@@ -21,6 +21,8 @@ from nims.routers.v1.resource_graph import router as resource_graph_router
 from nims.routers.v1.resource_view import router as resource_view_router
 from nims.routers.v1.search import router as search_router
 from nims.routers.v1.templates import router as templates_router
+from nims.routers.v1.identity_admin import router as identity_admin_router
+from nims.routers.v1.users_admin import router as users_admin_router
 from nims.swagger_html import SWAGGER_DOCS_HTML
 
 
@@ -57,6 +59,8 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(auth_router, prefix="/v1")
 app.include_router(core_router, prefix="/v1")
+app.include_router(users_admin_router, prefix="/v1")
+app.include_router(identity_admin_router, prefix="/v1")
 app.include_router(dcim_router, prefix="/v1")
 app.include_router(ipam_router, prefix="/v1")
 app.include_router(circuits_router, prefix="/v1")
